@@ -1,0 +1,25 @@
+{
+  "name": "Best Rummy Hubs — India skill gaming guides",
+  "short_name": "Rummy Hubs",
+  "description": "Independent guides to rummy, fantasy cricket, and skill-game apps in India. Not affiliated with any operator.",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#0c1224",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "lang": "en-IN"
+}

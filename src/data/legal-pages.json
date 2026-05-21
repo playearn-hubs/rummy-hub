@@ -1,0 +1,115 @@
+[
+  {
+    "slug": "privacy-policy",
+    "category": "legal",
+    "metaTitle": "Privacy Policy | Best Rummy Hubs",
+    "metaDescription": "How Best Rummy Hubs collects, uses, and protects information when you browse our independent rummy app guides in India.",
+    "keywords": "privacy policy, rummy site privacy, Best Rummy Hubs data",
+    "h1": "Privacy policy",
+    "datePublished": "2026-01-01",
+    "intro": "This policy explains what we collect when you use Best Rummy Hubs and how we handle it. We are an independent information site, not a gaming operator.",
+    "sections": [
+      {
+        "heading": "Information we collect",
+        "body": "We may receive standard server logs (IP address, browser type, pages viewed) and cookies or analytics data if enabled. We do not operate rummy games or process player deposits on this website."
+      },
+      {
+        "heading": "How we use information",
+        "body": "Data helps us improve guides, measure traffic, and prevent abuse. We do not sell personal information. Contact us at the email in our site footer for privacy questions."
+      },
+      {
+        "heading": "Third-party links",
+        "body": "Download buttons open official operator invite or store URLs. Those sites have their own privacy policies — review them before creating an account."
+      },
+      {
+        "heading": "Your choices",
+        "body": "You can disable cookies in your browser. You may request correction or deletion of data you sent us directly (e.g. by email), subject to legal retention requirements."
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Do you store payment details?",
+        "answer": "No. Payments happen only on third-party apps you choose to install. We never collect card or UPI data on this site."
+      },
+      {
+        "question": "Who is the data controller?",
+        "answer": "Best Rummy Hubs operates this informational website. Contact playearnhubs@gmail.com for privacy requests."
+      }
+    ],
+    "related": ["/terms-of-use/", "/about/", "/faqs/"]
+  },
+  {
+    "slug": "terms-of-use",
+    "category": "legal",
+    "metaTitle": "Terms of Use | Best Rummy Hubs",
+    "metaDescription": "Terms for using Best Rummy Hubs: independent rummy guides, disclaimers, affiliate links, and user responsibilities in India.",
+    "keywords": "terms of use, rummy website terms, Best Rummy Hubs disclaimer",
+    "h1": "Terms of use",
+    "datePublished": "2026-01-01",
+    "intro": "By using this website you agree to these terms. If you disagree, please do not use the site.",
+    "sections": [
+      {
+        "heading": "Informational purpose only",
+        "body": "Content compares rummy apps and explains install steps. We do not guarantee bonuses, winnings, or app availability. Offers change inside each operator's app."
+      },
+      {
+        "heading": "No affiliation",
+        "body": "We are not Junglee Rummy, Mast179, RVIP, 66 Game, HU777 Club, or any other listed brand's official website unless explicitly stated on a specific page."
+      },
+      {
+        "heading": "Affiliate & sponsored links",
+        "body": "Some download buttons use referral or invite URLs. We may earn compensation when you sign up through those links. This does not affect our editorial independence."
+      },
+      {
+        "heading": "Limitation of liability",
+        "body": "Use guides at your own risk. We are not liable for losses, account issues, or disputes with third-party platforms. Confirm legality in your state before real-money play."
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Can I copy your content?",
+        "answer": "Short quotes with a link back are fine. Full republication requires written permission."
+      },
+      {
+        "question": "Do these terms change?",
+        "answer": "We may update terms when practices change. Continued use after updates means acceptance of the revised terms."
+      }
+    ],
+    "related": ["/privacy-policy/", "/about/", "/is-rummy-legal-india/"]
+  },
+  {
+    "slug": "about",
+    "category": "legal",
+    "metaTitle": "About Us & Editorial Policy | Best Rummy Hubs",
+    "metaDescription": "Who runs Best Rummy Hubs, our editorial standards for rummy app reviews in India, and how we stay independent from operators.",
+    "keywords": "about Best Rummy Hubs, rummy editorial policy, independent rummy reviews India",
+    "h1": "About Best Rummy Hubs",
+    "datePublished": "2026-01-01",
+    "intro": "We help Indian players compare rummy APK downloads, bonuses, and safety topics through clear, mobile-friendly guides.",
+    "sections": [
+      {
+        "heading": "What we do",
+        "body": "We publish independent comparisons and how-to articles for online rummy and related skill games. Download buttons point to operator flows you can verify in-app."
+      },
+      {
+        "heading": "Editorial policy",
+        "body": "We summarize public-facing app features and common user questions. We update pages when policies change. We do not accept payment to rank apps #1."
+      },
+      {
+        "heading": "Contact",
+        "body": "Email playearnhubs@gmail.com for corrections or general questions. We cannot resolve wallet, KYC, or bonus disputes with third-party apps."
+      }
+    ],
+    "faqs": [
+      {
+        "question": "Are you a gambling company?",
+        "answer": "No. We only publish information and outbound links to third-party apps. We do not run games or hold player funds."
+      },
+      {
+        "question": "How do you choose apps to list?",
+        "answer": "We focus on brands commonly searched in India and document official install paths. Inclusion is not an endorsement to play with real money."
+      }
+    ],
+    "related": ["/privacy-policy/", "/terms-of-use/", "/guides/"]
+  }
+]
