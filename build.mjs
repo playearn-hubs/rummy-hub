@@ -18,6 +18,25 @@ const seoPages = [...loadJson("data/seo-pages.json"), ...loadOptionalJson("data/
 const legalPages = loadJson("data/legal-pages.json");
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
 const SPONSORED_REL = "noopener noreferrer sponsored";
+const GA_ID = process.env.GA_MEASUREMENT_ID || siteConfig.analyticsId || "";
+let OG_IMAGE_PATH = "/images/main.png";
+let HERO_IMAGE_PATH = "/images/main.png";
+
+const PAGE_KEYWORDS = {
+  "online-rummy": "online rummy India, play rummy online, rummy app guide 2026, skill rummy India",
+  "teen-patti": "teen patti online India, teen patti rules, teen patti app download, 3 patti game India",
+  "poker": "online poker India, Texas Holdem India, poker app guide, real money poker India",
+  slots: "online slots India, RNG slots guide, casual games India, responsible gaming slots",
+  "welcome-bonus": "rummy welcome bonus, first deposit bonus rummy, signup bonus India, rummy promo terms",
+  "referral-bonus": "rummy referral code, invite bonus rummy, referral program India, earn referral rummy",
+  "cashback-offer": "rummy cashback, loss back offer rummy, gaming cashback India, rummy promotions",
+  "download-apk": "download APK India, safe APK install, rummy APK guide, sideload app India",
+  "rummy-apk-download": "rummy APK download, download rummy app India, official rummy APK, Android rummy install",
+  "how-to-play-rummy": "how to play rummy, rummy for beginners, learn rummy India, 13 card rummy tutorial",
+  "rummy-rules": "rummy rules, Indian rummy rules, rummy sequences sets, rummy scoring rules",
+  "how-to-win-rummy": "how to win rummy, rummy strategy tips, rummy tricks India, improve rummy skills",
+  "poker-rules": "poker hand rankings, poker rules India, Texas Holdem rules, poker guide beginners",
+};
 
 const primaryDownload = apps[0]?.downloadUrl || "#download";
 
@@ -79,21 +98,80 @@ const CATEGORY_LABELS = {
   apps: "Apps",
 };
 
-prepareOutput();
-writeRuntimeAssets();
-copyStaticAssets();
-writeHomePage();
-const builtSeo = writeSeoPages();
-const builtApps = writeMissingAppPages();
-writeGuidesHub();
-writeAppsHub();
-const builtLegal = writeLegalPages();
-writeSeoFiles();
+async function runBuild() {
+  validateProductionConfig();
+  prepareOutput();
+  await generateRasterImages();
+  writeRuntimeAssets();
+  copyStaticAssets();
+  applySeoDefaults();
+  writeHomePage();
+  const builtSeo = writeSeoPages();
+  const builtApps = writeMissingAppPages();
+  writeGuidesHub();
+  writeAppsHub();
+  const builtLegal = writeLegalPages();
+  writeSeoFiles();
 
-const totalPages = 1 + builtSeo.length + builtApps.length + builtLegal.length + 2;
-console.log(
-  `Built ${totalPages} pages (home + ${builtSeo.length + builtApps.length} guides + ${builtLegal.length} legal + hubs) → ${OUT}`
-);
+  const totalPages = 1 + builtSeo.length + builtApps.length + builtLegal.length + 2;
+  console.log(
+    `Built ${totalPages} pages (home + ${builtSeo.length + builtApps.length} guides + ${builtLegal.length} legal + hubs) → ${OUT}`
+  );
+  console.log(`SITE_URL=${SITE_URL} INDEXABLE=${INDEXABLE} OG=${getOgImageUrl()}`);
+}
+
+runBuild().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+
+function getOgImageUrl() {
+  return `${SITE_URL}${OG_IMAGE_PATH}`;
+}
+
+function validateProductionConfig() {
+  const warnings = [];
+  if (!INDEXABLE) warnings.push("SITE_INDEX=false — robots will block indexing (use for staging only).");
+  if (/localhost|127\.0\.0\.1/i.test(SITE_URL)) {
+    warnings.push("SITE_URL points to localhost — set https://www.bestrummyhubs.com on Vercel for production.");
+  }
+  if (INDEXABLE && !SITE_URL.startsWith("https://")) {
+    warnings.push("Production SITE_URL should use https:// for canonicals and sitemap.");
+  }
+  warnings.forEach((w) => console.warn("[build]", w));
+}
+
+async function generateRasterImages() {
+  const template = path.join(SOURCE, "static", "images", "og-template.svg");
+  ensure(path.join(OUT, "images"));
+  if (!fs.existsSync(template)) {
+    console.warn("[build] Missing og-template.svg — hero/OG images skipped.");
+    HERO_IMAGE_PATH = "/images/logo.svg";
+    OG_IMAGE_PATH = "/images/logo.svg";
+    return;
+  }
+  try {
+    const sharp = (await import("sharp")).default;
+    const buf = fs.readFileSync(template);
+    await sharp(buf).resize(1200, 630).png().toFile(path.join(OUT, "images", "og.png"));
+    await sharp(buf).resize(960, 720).png().toFile(path.join(OUT, "images", "main.png"));
+    OG_IMAGE_PATH = "/images/og.png";
+    HERO_IMAGE_PATH = "/images/main.png";
+  } catch (err) {
+    fs.copyFileSync(template, path.join(OUT, "images", "hero.svg"));
+    HERO_IMAGE_PATH = "/images/hero.svg";
+    OG_IMAGE_PATH = "/images/hero.svg";
+    console.warn("[build] sharp unavailable — using SVG hero. Run: npm install sharp");
+  }
+}
+
+function applySeoDefaults() {
+  for (const page of seoPages) {
+    if (!page.keywords && PAGE_KEYWORDS[page.slug]) {
+      page.keywords = PAGE_KEYWORDS[page.slug];
+    }
+  }
+}
 
 function normalizeSiteUrl(raw) {
   const noTrailing = String(raw).trim().replace(/\/$/, "");
@@ -113,6 +191,18 @@ function loadOptionalJson(relativeFile) {
 
 function sponsoredRel() {
   return SPONSORED_REL;
+}
+
+function analyticsSnippet() {
+  if (!GA_ID || !INDEXABLE) return "";
+  return `
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${escapeHtml(GA_ID)}"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];
+    function gtag(){dataLayer.push(arguments);}
+    gtag("js",new Date());
+    gtag("config","${escapeHtml(GA_ID)}",{anonymize_ip:true});
+  </script>`.trim();
 }
 
 function pageDates(page) {
@@ -709,7 +799,7 @@ function homeBody(h) {
       </div>
       <div class="fx-hero-visual">
         <div class="fx-frame">
-          <img src="/images/main.png" alt="Best rummy app India — APK download comparison" width="480" height="360" loading="eager">
+          <img src="${HERO_IMAGE_PATH}" alt="Best rummy app India — APK download comparison" width="480" height="360" loading="eager" fetchpriority="high" decoding="async">
         </div>
         <div class="fx-float-card fx-float-card--mint"><strong>5+ apps</strong><span>Compared side by side</span></div>
         <div class="fx-float-card fx-float-card--gold"><strong>Official APK</strong><span>Verified download paths</span></div>
@@ -865,6 +955,7 @@ function layout({
   <link rel="manifest" href="/favicon/site.webmanifest">
   <link rel="stylesheet" href="/assets/styles.css">
   ${jsonLdMarkup}
+  ${analyticsSnippet()}
 </head>
 <body${bodyClass}>
   <div class="bg-motion" aria-hidden="true">
@@ -1051,7 +1142,7 @@ function pageMeta({
   modified,
 }) {
   const canonical = pageUrl(canonicalPath);
-  const img = `${SITE_URL}/images/main.png`;
+  const img = getOgImageUrl();
   const robots = indexable ? "index,follow,max-image-preview:large" : "noindex,nofollow";
   const kwMeta = keywords ? `<meta name="keywords" content="${escapeHtml(keywords)}">` : "";
   const canonicalTag = skipCanonical ? "" : `<link rel="canonical" href="${canonical}">`;
