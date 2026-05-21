@@ -2,8 +2,13 @@
   "name": "best-rummy-hubs",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "npx --yes serve dist -l 3000"
+    "dev": "npx --yes serve dist -l 3000",
+    "preview": "npm run build && npx --yes serve dist -l 4173"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
   }
 }

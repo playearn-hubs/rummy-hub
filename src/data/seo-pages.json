@@ -16,7 +16,7 @@
       { "question": "Is online rummy skill-based?", "answer": "Many formats are treated as skill games in several jurisdictions, but outcomes still vary with opponents and variance." },
       { "question": "How do I download safely?", "answer": "Use official store listings or verified links from the operator — see our [download APK guide](/download-apk/)." }
     ],
-    "related": ["/rummy-rules/", "/how-to-play-rummy/", "/best-rummy-apps/"]
+    "related": ["/rummy-rules/", "/how-to-play-rummy/", "/best-rummy-apps-india/"]
   },
   {
     "slug": "teen-patti",
@@ -29,13 +29,13 @@
     "sections": [
       { "heading": "Basic rules", "body": "Players receive three cards; hand rankings follow traditional sequences. Variants like AK47 or Muflis change strategy — always read the lobby rules." },
       { "heading": "Bankroll tips", "body": "Set a session limit before you sit. Teen Patti sessions can move quickly — avoid raising stakes after losses." },
-      { "heading": "Safe installs", "body": "Download only from official sources. Compare apps on our [best rummy apps](/best-rummy-apps/) hub if you also play rummy." }
+      { "heading": "Safe installs", "body": "Download only from official sources. Compare apps on our [best rummy apps](/best-rummy-apps-india/) hub if you also play rummy." }
     ],
     "faqs": [
       { "question": "Is Teen Patti the same as poker?", "answer": "No. Teen Patti uses three cards and different rankings; poker typically uses community cards and another hand ladder." },
       { "question": "Can I practice for free?", "answer": "Many apps offer practice chips — use them to learn flow before cash tables if available." }
     ],
-    "related": ["/how-to-play-rummy/", "/blog/how-to-play-teen-patti/"]
+    "related": ["/how-to-play-rummy/", "/teen-patti/", "/online-rummy/"]
   },
   {
     "slug": "poker",
@@ -73,7 +73,7 @@
       { "question": "Can strategies guarantee slot wins?", "answer": "No. RNG games cannot be beaten long-term with betting patterns." },
       { "question": "Are slots skill games?", "answer": "Generally no — they are chance-based. Laws may classify them differently from rummy." }
     ],
-    "related": ["/blog/online-cash-games-guide-india/", "/faqs/"]
+    "related": ["/real-money-rummy-india/", "/faqs/", "/online-rummy/"]
   },
   {
     "slug": "welcome-bonus",
@@ -111,7 +111,7 @@
       { "question": "Why did my referral bonus not arrive?", "answer": "Usually eligibility wasn't met, the campaign ended, or verification is pending — check support inside the app." },
       { "question": "Are referral earnings taxable?", "answer": "Ask a qualified tax professional — we don't provide tax advice." }
     ],
-    "related": ["/welcome-bonus/", "/blog/best-referral-apps-india-2026/"]
+    "related": ["/welcome-bonus/", "/referral-bonus/", "/best-rummy-apps-india/"]
   },
   {
     "slug": "cashback-offer",
@@ -149,7 +149,7 @@
       { "question": "Is sideloading illegal?", "answer": "Installing APKs isn't automatically illegal, but the app and real-money play may be restricted in your state." },
       { "question": "What about iOS?", "answer": "iPhone users typically use App Store listings when available — not APK files." }
     ],
-    "related": ["/rummy-apk-download/", "/blog/safe-download-checklist/"]
+    "related": ["/rummy-apk-download/", "/safe-rummy-tips/", "/download-apk/"]
   },
   {
     "slug": "rummy-apk-download",
@@ -161,7 +161,7 @@
     "intro": "Looking for a rummy APK? Start with operators you can verify, then complete KYC before large deposits.",
     "sections": [
       { "heading": "Step-by-step", "body": "1) Tap an official link. 2) Allow install from trusted source if prompted. 3) Register with accurate details. 4) Complete KYC for withdrawals. 5) Read bonus terms before depositing." },
-      { "heading": "Compare top apps", "body": "See [best rummy apps](/best-rummy-apps/) and deep dives like [Junglee Rummy](/apps/junglee-rummy/)." },
+      { "heading": "Compare top apps", "body": "See [best rummy apps](/best-rummy-apps-india/) and deep dives like [Junglee Rummy](/junglee-rummy/)." },
       { "heading": "Rules refresh", "body": "New to the game? Read [how to play rummy](/how-to-play-rummy/) and [rummy rules](/rummy-rules/)." }
     ],
     "faqs": [
@@ -187,7 +187,7 @@
       { "question": "How many cards are dealt?", "answer": "Usually 13 cards each in Indian rummy formats." },
       { "question": "What is a joker?", "answer": "Wild cards that substitute others — cannot always be used in a pure sequence." }
     ],
-    "related": ["/rummy-rules/", "/how-to-win-rummy/", "/blog/rummy-tips-and-tricks/"]
+    "related": ["/rummy-rules/", "/how-to-win-rummy/", "/13-card-rummy/"]
   },
   {
     "slug": "rummy-rules",
@@ -219,13 +219,13 @@
     "sections": [
       { "heading": "Discard discipline", "body": "Don't feed opponents useful cards. Track what's been thrown; adjust your meld plan." },
       { "heading": "Middle cards", "body": "7s and 8s connect more combinations — but balance risk if you're holding too long." },
-      { "heading": "Bankroll", "body": "Move up stakes only when you're stable at the current level. Read our [earn money guide](/earn-money-guide/) with realistic expectations." }
+      { "heading": "Bankroll", "body": "Move up stakes only when you're stable at the current level. Read our [earn money guide](/earn-money-rummy-guide/) with realistic expectations." }
     ],
     "faqs": [
       { "question": "Can I win every game?", "answer": "No. Variance and opponent skill mean losing sessions are normal." },
       { "question": "Should I always chase a pure sequence first?", "answer": "Usually yes — it's required to declare in most Indian formats." }
     ],
-    "related": ["/rummy-rules/", "/blog/rummy-tips-and-tricks/"]
+    "related": ["/rummy-rules/", "/how-to-win-rummy/", "/online-rummy/"]
   },
   {
     "slug": "poker-rules",
