@@ -14,7 +14,11 @@ const apps = loadJson("data/apps.json");
 const faqs = loadJson("data/faqs.json");
 const siteConfig = loadJson("data/site-config.json");
 const home = loadJson("data/home.json");
-const seoPages = [...loadJson("data/seo-pages.json"), ...loadOptionalJson("data/seo-pages-extra.json")];
+const seoPages = [
+  ...loadJson("data/seo-pages.json"),
+  ...loadOptionalJson("data/seo-pages-extra.json"),
+  ...loadOptionalJson("data/featured-apps-pages.json"),
+];
 const legalPages = loadJson("data/legal-pages.json");
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
 const SPONSORED_REL = "noopener noreferrer sponsored";
@@ -38,16 +42,22 @@ const PAGE_KEYWORDS = {
   "poker-rules": "poker hand rankings, poker rules India, Texas Holdem rules, poker guide beginners",
 };
 
-const primaryDownload = apps[0]?.downloadUrl || "#download";
+const featuredApps = apps.filter((a) => a.featured);
+const primaryApp = featuredApps[0] || apps[0];
+const secondaryApp = featuredApps[1] || apps[1];
+const primaryDownload = primaryApp?.downloadUrl || "#download";
+const secondaryDownload = secondaryApp?.downloadUrl || "#download";
 
 const menuSections = [
   {
     title: "Main",
     items: [
       ["/", "Home"],
-      ["/guides/", "All guides"],
-      ["/apps/", "App guides"],
-      ["/best-rummy-apps-india/", "Best rummy apps"],
+      ["/y1-game/", "Y1 Game"],
+      ["/ie777/", "IE777"],
+      ["/y1-vs-ie777/", "Y1 vs IE777"],
+      ["/apps/", "All apps"],
+      ["/guides/", "Guides"],
     ],
   },
   {
@@ -55,8 +65,8 @@ const menuSections = [
     items: [
       ["/download-apk/", "APK install guide"],
       ["/rummy-apk-download/", "Rummy APK"],
-      ["/#apps", "Compare apps"],
-      ["/junglee-rummy/", "Junglee Rummy"],
+      ["/#featured", "Featured apps"],
+      ["/best-rummy-apps-india/", "Best rummy apps"],
     ],
   },
   {
@@ -83,7 +93,6 @@ const menuSections = [
       ["/rummy-withdrawal-guide/", "Withdrawals & KYC"],
       ["/is-rummy-legal-india/", "Legality by state"],
       ["/faqs/", "FAQ"],
-      ["/earn-money-rummy-guide/", "Earn money guide"],
       ["/privacy-policy/", "Privacy"],
       ["/about/", "About"],
     ],
@@ -112,12 +121,14 @@ async function runBuild() {
   writeAppsHub();
   const builtLegal = writeLegalPages();
   writeSeoFiles();
+  validateSeoBuild({ builtSeo, builtApps, builtLegal });
 
   const totalPages = 1 + builtSeo.length + builtApps.length + builtLegal.length + 2;
   console.log(
     `Built ${totalPages} pages (home + ${builtSeo.length + builtApps.length} guides + ${builtLegal.length} legal + hubs) → ${OUT}`
   );
   console.log(`SITE_URL=${SITE_URL} INDEXABLE=${INDEXABLE} OG=${getOgImageUrl()}`);
+  console.log(`Featured: ${(featuredApps.map((a) => a.name).join(", ") || "none")}`);
 }
 
 runBuild().catch((err) => {
@@ -131,9 +142,9 @@ function getOgImageUrl() {
 
 function validateProductionConfig() {
   const warnings = [];
-  if (!INDEXABLE) warnings.push("SITE_INDEX=false — robots will block indexing (use for staging only).");
+  if (!INDEXABLE) warnings.push("SITE_INDEX=false, robots will block indexing (use for staging only).");
   if (/localhost|127\.0\.0\.1/i.test(SITE_URL)) {
-    warnings.push("SITE_URL points to localhost — set https://www.bestrummyhubs.com on Vercel for production.");
+    warnings.push("SITE_URL points to localhost. Set https://www.bestrummyhubs.com on Vercel for production.");
   }
   if (INDEXABLE && !SITE_URL.startsWith("https://")) {
     warnings.push("Production SITE_URL should use https:// for canonicals and sitemap.");
@@ -145,7 +156,7 @@ async function generateRasterImages() {
   const template = path.join(SOURCE, "static", "images", "og-template.svg");
   ensure(path.join(OUT, "images"));
   if (!fs.existsSync(template)) {
-    console.warn("[build] Missing og-template.svg — hero/OG images skipped.");
+    console.warn("[build] Missing og-template.svg, hero/OG images skipped.");
     HERO_IMAGE_PATH = "/images/logo.svg";
     OG_IMAGE_PATH = "/images/logo.svg";
     return;
@@ -161,7 +172,7 @@ async function generateRasterImages() {
     fs.copyFileSync(template, path.join(OUT, "images", "hero.svg"));
     HERO_IMAGE_PATH = "/images/hero.svg";
     OG_IMAGE_PATH = "/images/hero.svg";
-    console.warn("[build] sharp unavailable — using SVG hero. Run: npm install sharp");
+    console.warn("[build] sharp unavailable, using SVG hero. Run: npm install sharp");
   }
 }
 
@@ -222,438 +233,326 @@ function writeRuntimeAssets() {
   const styles = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root{
-  --bg:#ffffff;--surface:#faf8f5;--surface-elevated:#ffffff;
-  --panel:#ffffff;--panel-border:rgba(212,175,55,.22);
-  --text:#1a1a1a;--muted:#555555;
-  --burgundy:#5c1010;--felt:#05301b;
-  --gold:#d4af37;--gold-hover:#c19b2e;--gold-dark:#9a7b1a;
-  --gold-light:#fbf6e8;--gold-soft:rgba(212,175,55,.14);
-  --brand:var(--burgundy);
-  --red:#c41e2a;--red-hover:#a81822;
-  --accent:var(--gold);--accent-light:var(--gold);--accent-dark:var(--gold-dark);--accent-muted:var(--gold-soft);
-  --dark:#1a1a1a;
-  --grad-btn:linear-gradient(180deg,#e8c547 0%,#d4af37 48%,#b8941f 100%);
-  --grad-cta:linear-gradient(180deg,#e53945 0%,#c41e2a 100%);
-  --shadow-panel:0 4px 24px rgba(92,16,16,.06);
-  --shadow-card:0 12px 40px rgba(212,175,55,.15);
-  --header:64px;--dock:72px;--safe-b:env(safe-area-inset-bottom,0px);
-  --radius:12px;--radius-sm:10px;--radius-pill:999px;
-  --font-sans:"Inter",system-ui,-apple-system,sans-serif;
-  --font-display:var(--font-sans);
-  --font-body:var(--font-sans);
+  --bg:#ffffff;
+  --surface:#f6f7f9;
+  --panel:#ffffff;
+  --line:rgba(15,23,42,.1);
+  --text:#111827;
+  --muted:#5b6472;
+  --brand:#c41e2a;
+  --brand-dark:#96151e;
+  --ink:#0a0a0a;
+  --soft:rgba(196,30,42,.08);
+  --shadow:0 10px 30px rgba(15,23,42,.06);
+  --header:64px;
+  --dock:76px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --radius:16px;
+  --radius-sm:10px;
+  --pill:999px;
+  --font:"Inter",system-ui,-apple-system,sans-serif;
+  --wrap:min(100% - 1.5rem,1080px);
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:calc(var(--header) + 16px)}
 body{
-  margin:0;font-family:var(--font-body);font-weight:400;
-  background:var(--bg);color:var(--text);line-height:1.7;
-  -webkit-font-smoothing:antialiased;
+  margin:0;font-family:var(--font);color:var(--text);background:var(--bg);
+  line-height:1.7;-webkit-font-smoothing:antialiased;min-height:100dvh;
   padding-bottom:calc(var(--dock) + var(--safe-b));
-  min-height:100dvh;
 }
-body::before{
-  content:"";position:fixed;inset:0;z-index:-3;pointer-events:none;
-  background:var(--bg);
-}
-.bg-motion{
-  position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none;
-}
-.bg-orb{
-  position:absolute;border-radius:50%;filter:blur(72px);will-change:transform;
-  animation:bg-drift 22s ease-in-out infinite;
-}
-.bg-orb--1{
-  width:min(420px,70vw);height:min(420px,70vw);
-  top:-12%;right:-8%;
-  background:rgba(212,175,55,.22);
-  animation-duration:24s;
-}
-.bg-orb--2{
-  width:min(360px,60vw);height:min(360px,60vw);
-  bottom:8%;left:-12%;
-  background:rgba(92,16,16,.07);
-  animation-duration:28s;animation-delay:-6s;
-}
-.bg-orb--3{
-  width:min(280px,50vw);height:min(280px,50vw);
-  top:38%;left:42%;
-  background:rgba(212,175,55,.14);
-  animation-duration:20s;animation-delay:-12s;
-}
-.bg-shimmer{
-  position:absolute;inset:0;
-  background:linear-gradient(115deg,transparent 40%,rgba(212,175,55,.04) 50%,transparent 60%);
-  background-size:200% 200%;
-  animation:bg-shimmer 14s ease-in-out infinite;
-}
-@keyframes bg-drift{
-  0%,100%{transform:translate(0,0) scale(1)}
-  33%{transform:translate(28px,-24px) scale(1.06)}
-  66%{transform:translate(-22px,20px) scale(.94)}
-}
-@keyframes bg-shimmer{
-  0%,100%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-}
-main{position:relative;z-index:1}
 img{max-width:100%;height:auto;display:block}
 a{color:inherit;text-decoration:none}
-.wrap{width:min(100% - 1.5rem,440px);margin-inline:auto}
-.block{padding:3.5rem 0;position:relative}
-.block:nth-child(even){background:var(--surface)}
-.block-head{margin-bottom:1.5rem}
+button,input,textarea{font:inherit}
+:focus-visible{outline:3px solid rgba(196,30,42,.35);outline-offset:2px}
+.wrap{width:var(--wrap);margin-inline:auto}
+.block{padding:3.25rem 0}
+.block--soft{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.block-head{margin-bottom:1.35rem;max-width:62ch}
 .eyebrow{
-  display:inline-flex;align-items:center;gap:.5rem;font-size:.68rem;font-weight:600;
-  letter-spacing:.12em;text-transform:uppercase;color:var(--gold-dark);margin-bottom:.6rem;
+  display:inline-flex;align-items:center;gap:.5rem;margin:0 0 .55rem;
+  font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);
 }
-.eyebrow::before{content:"";width:20px;height:2px;background:var(--gold);border-radius:2px}
-.block-title{font-size:clamp(1.55rem,5vw,2rem);font-weight:800;margin:0;letter-spacing:-.03em;line-height:1.2;color:var(--text)}
-.block-desc{margin:.5rem 0 0;font-size:.95rem;color:var(--muted);max-width:42ch}
-.block-desc a{color:var(--gold-dark);font-weight:600}
-.block-desc a:hover{color:var(--burgundy)}
+.block-title{margin:0;font-size:clamp(1.4rem,3vw,1.9rem);line-height:1.2;letter-spacing:-.03em}
+.block-desc{margin:.55rem 0 0;color:var(--muted)}
+.block-desc a{color:var(--brand);font-weight:600}
+.block-desc a:hover{color:var(--brand-dark)}
 
 .shell{
-  position:fixed;top:0;left:0;right:0;z-index:100;height:var(--header);
-  border-bottom:1px solid var(--panel-border);
-  background:rgba(255,255,255,.92);backdrop-filter:blur(12px);
-  box-shadow:0 1px 0 rgba(212,175,55,.12);
+  position:fixed;inset:0 0 auto;z-index:100;height:var(--header);
+  background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
 }
-.shell-inner{height:100%;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;max-width:1100px;margin:0 auto;gap:.75rem}
-.brand{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:1rem;color:var(--burgundy);flex-shrink:0}
-.brand-text{letter-spacing:.02em}
-.brand-mark{width:36px;height:36px;border-radius:var(--radius-sm);padding:3px;background:var(--gold-light);border:1px solid var(--panel-border)}
-.shell-actions{display:flex;align-items:center;gap:.5rem;margin-left:auto}
-.shell-link{display:none;font-size:.88rem;font-weight:500;color:var(--muted);padding:.4rem .65rem}
-.shell-link:hover{color:var(--burgundy)}
-.shell-cta.fx-btn{
-  display:none;min-height:30px;padding:0 .65rem;font-size:.7rem;font-weight:600;
-  width:auto;white-space:nowrap;border-radius:8px;
-  box-shadow:0 2px 8px rgba(196,30,42,.22);
+.shell-inner{
+  height:100%;width:var(--wrap);margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:.75rem;
 }
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:800;color:var(--ink)}
+.brand-mark{width:36px;height:36px;border-radius:10px;object-fit:contain;background:#111;border:1px solid #222;padding:3px}
+.shell-actions{display:flex;align-items:center;gap:.45rem;margin-left:auto}
+.shell-link{display:none;font-size:.9rem;font-weight:600;color:var(--muted);padding:.4rem .55rem;border-radius:8px}
+.shell-link:hover{color:var(--brand);background:var(--soft)}
+.shell-cta{display:none !important}
 .nav-toggle{
-  width:42px;height:42px;border-radius:var(--radius-sm);border:1px solid var(--panel-border);
-  background:var(--bg);color:var(--text);cursor:pointer;
-  display:grid;place-items:center;font-size:1.1rem;flex-shrink:0;
+  width:42px;height:42px;border-radius:12px;border:1px solid var(--line);
+  background:#fff;color:var(--text);cursor:pointer;display:grid;place-items:center;
 }
-.drawer{position:fixed;inset:0;z-index:110;pointer-events:none;display:flex;flex-direction:column;align-items:center}
+
+.drawer{position:fixed;inset:0;z-index:110;pointer-events:none;display:flex;justify-content:center}
 .drawer.is-open{pointer-events:auto}
-.drawer-bg{position:absolute;inset:0;background:rgba(26,26,26,.35);backdrop-filter:blur(4px);opacity:0;transition:opacity .3s}
+.drawer-bg{position:absolute;inset:0;background:rgba(15,23,42,.42);opacity:0;transition:opacity .25s}
 .drawer.is-open .drawer-bg{opacity:1}
 .drawer-panel{
-  position:relative;z-index:1;width:min(92vw,420px);max-height:min(78vh,560px);overflow-y:auto;
-  margin-top:calc(var(--header) + .5rem);
-  background:var(--bg);border:1px solid var(--panel-border);
-  border-radius:var(--radius);
-  padding:1rem 1.15rem 1.25rem;
-  box-shadow:var(--shadow-card);
-  transform:translateY(calc(-100% - var(--header) - 1rem));opacity:0;
-  transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .3s;
-  display:flex;flex-direction:column;gap:.5rem;
+  position:relative;z-index:1;width:min(92vw,440px);max-height:min(80vh,620px);overflow:auto;
+  margin-top:calc(var(--header) + .75rem);background:#fff;border:1px solid var(--line);
+  border-radius:18px;box-shadow:var(--shadow);padding:1rem 1.1rem 1.2rem;
+  transform:translateY(-12px);opacity:0;transition:transform .28s ease,opacity .28s ease;
 }
 .drawer.is-open .drawer-panel{transform:translateY(0);opacity:1}
-.menu-panel-title{
-  margin:0 0 .25rem;font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--muted);text-align:center;
-}
-.menu-group{padding:.35rem 0;border-bottom:1px solid rgba(212,175,55,.12)}
-.menu-group:last-of-type{border-bottom:none}
-.menu-group-title{
-  margin:0 0 .4rem;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--gold-dark);
-}
-.menu-group-links{display:grid;grid-template-columns:1fr 1fr;gap:.25rem .5rem}
-.menu-group-links a{
-  padding:.55rem .65rem;border-radius:var(--radius-sm);font-weight:500;font-size:.82rem;
-  color:var(--text);border:1px solid transparent;transition:border-color .2s,background .2s;
-}
-.menu-group-links a:hover,.menu-group-links a:focus{border-color:var(--panel-border);background:var(--gold-soft)}
-.drawer-foot{margin-top:.5rem;display:grid;gap:.5rem;padding-top:.75rem;border-top:1px solid var(--panel-border)}
+.menu-panel-title{margin:0 0 .35rem;text-align:center;font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.menu-group{padding:.45rem 0;border-bottom:1px solid var(--line)}
+.menu-group:last-of-type{border-bottom:0}
+.menu-group-title{margin:0 0 .4rem;font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+.menu-group-links{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .45rem}
+.menu-group-links a{padding:.55rem .65rem;border-radius:10px;font-size:.84rem;font-weight:600;border:1px solid transparent}
+.menu-group-links a:hover{background:var(--soft);border-color:rgba(196,30,42,.18)}
+.drawer-foot{display:grid;gap:.55rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line)}
 
-.fx-hero{
-  padding-top:calc(var(--header) + 1.5rem);padding-bottom:3rem;position:relative;overflow:hidden;
-  background:var(--bg);
+.hero{
+  padding:calc(var(--header) + 2rem) 0 2.5rem;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(196,30,42,.1), transparent 34%),
+    linear-gradient(180deg,#fff 0%, #fafafa 100%);
 }
-.fx-hero-wave{
-  position:absolute;top:0;right:-20%;width:70%;height:100%;z-index:0;pointer-events:none;
-  background:radial-gradient(ellipse 80% 70% at 70% 30%,rgba(212,175,55,.14),transparent 65%),
-    radial-gradient(ellipse 60% 50% at 100% 80%,rgba(92,16,16,.06),transparent 55%);
+.hero-grid{display:grid;gap:1.5rem}
+.hero-brand{display:grid;justify-items:center;gap:.85rem;margin:0 0 1.4rem;text-align:center}
+.hero-logo{
+  width:55%;max-width:300px;aspect-ratio:1;object-fit:cover;border-radius:26px;
+  background:#111;border:1px solid #222;box-shadow:0 18px 40px rgba(15,23,42,.18);
 }
-.fx-hero-grid{position:relative;z-index:1}
-.fx-hero-copy{position:relative}
-.fx-pill{
-  display:inline-flex;padding:.35rem .85rem;border-radius:var(--radius-pill);font-size:.65rem;font-weight:600;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--gold-dark);
-  background:var(--gold-light);border:1px solid rgba(212,175,55,.35);
-  margin-bottom:1rem;
+.hero-brand .btn{width:min(100%,320px)}
+.hero-brand-note{margin:0;font-size:.78rem;color:var(--muted)}
+.app-brand{
+  display:grid;justify-items:center;gap:.85rem;text-align:center;
+  margin:1.5rem 0;padding:1.5rem 1.15rem;border-radius:20px;
+  background:linear-gradient(180deg,#fff,var(--surface));
+  border:1px solid var(--line);box-shadow:var(--shadow);
 }
-.fx-hero h1{
-  font-size:clamp(1.85rem,7vw,2.65rem);font-weight:800;
-  line-height:1.15;margin:0 0 1rem;letter-spacing:-.03em;color:var(--text);
+.app-brand-logo{
+  width:55%;max-width:280px;aspect-ratio:1;object-fit:cover;border-radius:26px;
+  background:#111;border:1px solid #222;box-shadow:0 18px 40px rgba(15,23,42,.18);
 }
-.fx-highlight{
-  display:inline;color:var(--gold-dark);background:var(--gold-light);
-  padding:.08em .35em;border-radius:var(--radius-sm);box-decoration-break:clone;
-  border:1px solid rgba(212,175,55,.3);
+.app-brand .btn{width:min(100%,320px)}
+.app-brand-note{margin:0;font-size:.8rem;color:var(--muted);max-width:44ch}
+.pill{
+  display:inline-flex;align-items:center;padding:.35rem .8rem;border-radius:var(--pill);
+  background:var(--soft);color:var(--brand);border:1px solid rgba(196,30,42,.18);
+  font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 1rem;
 }
-.fx-lead{font-size:1rem;font-weight:500;color:var(--muted);margin:0 0 1.25rem;max-width:40ch;line-height:1.75}
-.fx-chip{
-  display:flex;gap:.75rem;padding:1rem 1.1rem;border-radius:var(--radius);
-  background:var(--surface);border:1px solid var(--panel-border);margin-bottom:1.25rem;
-  font-size:.88rem;box-shadow:var(--shadow-panel);
+.hero h1{
+  margin:0 0 .9rem;font-size:clamp(1.9rem,5vw,3rem);line-height:1.12;letter-spacing:-.04em;
 }
-.fx-chip-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:.45rem}
-.fx-chip strong{display:block;color:var(--text);font-weight:600;margin-bottom:.15rem}
-.fx-actions{display:grid;gap:.65rem}
-.fx-hero-hint{display:flex;align-items:center;gap:.4rem;margin:1rem 0 0;font-size:.8rem;color:var(--muted)}
-.fx-hero-hint-icon{font-size:.9rem}
-.fx-hero-visual{position:relative;margin-top:1.5rem}
-.fx-float-card{
-  position:absolute;z-index:2;padding:.65rem .85rem;border-radius:var(--radius);
-  background:var(--bg);border:1px solid var(--panel-border);box-shadow:var(--shadow-card);
-  font-size:.72rem;max-width:140px;
+.hero-highlight{color:var(--brand)}
+.lead{margin:0 0 1.1rem;color:var(--muted);font-size:1.02rem;max-width:46ch}
+.note-card{
+  display:flex;gap:.75rem;padding:1rem 1.05rem;border-radius:14px;background:#fff;
+  border:1px solid var(--line);box-shadow:var(--shadow);margin:0 0 1.1rem;
 }
-.fx-float-card strong{display:block;font-size:.78rem;color:var(--text);margin-bottom:.15rem}
-.fx-float-card span{color:var(--muted);line-height:1.35}
-.fx-float-card--mint{top:-.5rem;left:-.25rem;background:var(--gold-light);border-color:rgba(212,175,55,.35)}
-.fx-float-card--mint strong{color:var(--gold-dark)}
-.fx-float-card--gold{bottom:1rem;right:-.25rem;background:var(--bg);border-color:var(--panel-border)}
-.fx-float-card--gold strong{color:var(--burgundy)}
-.fx-frame{
-  border-radius:var(--radius);overflow:hidden;
-  border:1px solid var(--panel-border);box-shadow:var(--shadow-card);
-  position:relative;background:var(--surface);
-}
-.fx-frame::after{display:none}
+.note-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);margin-top:.45rem;flex:0 0 auto}
+.note-card strong{display:block;margin-bottom:.15rem}
+.hero-actions,.card-actions{display:grid;gap:.55rem}
+.disclose{margin:.85rem 0 0;font-size:.8rem;color:var(--muted)}
 
-.fx-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  min-height:52px;padding:0 1.35rem;border-radius:var(--radius-sm);font-family:var(--font-body);
-  font-weight:600;font-size:.92rem;border:none;cursor:pointer;width:100%;
-  transition:background .15s,transform .12s,box-shadow .15s;
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.45rem;
+  min-height:50px;padding:0 1.15rem;border-radius:12px;border:1px solid transparent;
+  font-weight:700;font-size:.92rem;cursor:pointer;width:100%;transition:transform .12s,filter .15s,background .15s,border-color .15s;
 }
-.fx-btn:active{transform:translateY(1px)}
-.fx-btn--primary{
-  background:var(--grad-btn);color:#1a1408;
-  box-shadow:0 4px 16px rgba(212,175,55,.35);
-  border:1px solid var(--gold-dark);
-}
-.fx-btn--primary:hover{filter:brightness(1.05)}
-.fx-btn--dark{
-  background:var(--grad-cta);color:#fff;
-  box-shadow:0 4px 14px rgba(196,30,42,.3);
-  border:1px solid #a81822;
-}
-.fx-btn--dark:hover{filter:brightness(1.06)}
-.fx-btn--ghost{
-  background:var(--bg);color:var(--burgundy);
-  border:1px solid var(--panel-border);
-}
-.fx-btn--ghost:hover{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-dark)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:linear-gradient(180deg,#e53945,#c41e2a);color:#fff;border-color:#a81822;box-shadow:0 8px 18px rgba(196,30,42,.22)}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-dark{background:linear-gradient(180deg,#222,#0a0a0a);color:#fff;border-color:#111}
+.btn-dark:hover{filter:brightness(1.08)}
+.btn-ghost{background:#fff;color:var(--brand);border-color:var(--line)}
+.btn-ghost:hover{background:var(--soft);border-color:rgba(196,30,42,.25)}
 
-.fx-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.65rem}
-.fx-stat{
-  padding:1rem;border-radius:var(--radius);text-align:center;
-  background:var(--panel);border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
+.featured-grid{display:grid;gap:1rem}
+.featured-card{
+  background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.2rem;box-shadow:var(--shadow);
+  display:grid;gap:1rem;
 }
-.fx-stat b{
-  display:block;font-size:1.5rem;font-weight:800;
-  color:var(--gold-dark);letter-spacing:-.02em;
+.featured-top{display:flex;gap:.9rem;align-items:flex-start}
+.featured-logo{
+  width:64px;height:64px;border-radius:14px;object-fit:cover;background:#111;border:1px solid #222;flex:0 0 auto;
 }
-.fx-stat span{font-size:.72rem;color:var(--muted);font-weight:500}
+.featured-badge{
+  display:inline-flex;margin:0 0 .35rem;padding:.18rem .55rem;border-radius:var(--pill);
+  background:var(--soft);color:var(--brand);font-size:.65rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+}
+.featured-card h3{margin:0 0 .35rem;font-size:1.2rem}
+.featured-card p{margin:0;color:var(--muted);font-size:.92rem}
+.featured-note{margin:0;font-size:.78rem;color:var(--muted)}
 
-.fx-apps{display:flex;flex-direction:column;gap:.85rem}
-.fx-app{
-  padding:1.25rem;border-radius:var(--radius);
-  background:var(--panel);
-  border:1px solid var(--panel-border);
-  display:grid;gap:.75rem;transition:border-color .2s,box-shadow .2s;box-shadow:var(--shadow-panel);
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.7rem}
+.stat{
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:1rem;text-align:center;box-shadow:var(--shadow);
 }
-.fx-app:hover{border-color:rgba(212,175,55,.45);box-shadow:var(--shadow-card)}
-.fx-app-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
-.fx-app h3{margin:0;font-size:1.05rem;font-weight:700;color:var(--text)}
-.fx-score{font-size:.68rem;font-weight:600;padding:.25rem .5rem;border-radius:var(--radius-pill);background:var(--gold-light);color:var(--gold-dark);border:1px solid rgba(212,175,55,.35);font-family:var(--font-body)}
-.fx-app p{margin:0;font-size:.88rem;color:var(--muted);line-height:1.55}
-.fx-tags{display:flex;flex-wrap:wrap;gap:.4rem}
-.fx-tag{font-size:.62rem;padding:.28rem .55rem;border-radius:var(--radius-pill);background:var(--surface);color:var(--muted);border:1px solid var(--panel-border)}
+.stat b{display:block;font-size:1.4rem;color:var(--brand);letter-spacing:-.02em}
+.stat span{display:block;margin-top:.2rem;font-size:.75rem;color:var(--muted);font-weight:600}
 
-.fx-timeline{display:flex;flex-direction:column;gap:0;position:relative;padding-left:1.5rem}
-.fx-timeline::before{
-  content:"";position:absolute;left:.45rem;top:.5rem;bottom:.5rem;width:2px;
-  background:linear-gradient(180deg,var(--gold),rgba(212,175,55,.25),transparent);
-  border-radius:2px;
+.prose{color:var(--muted)}
+.prose p{margin:0 0 .85rem}
+.prose p:last-child{margin-bottom:0}
+.prose a{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.kw{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
+.kw span{
+  font-size:.72rem;font-weight:600;padding:.32rem .7rem;border-radius:var(--pill);
+  background:var(--soft);color:var(--brand-dark);border:1px solid rgba(196,30,42,.14);
 }
-.fx-step{position:relative;padding:0 0 1.25rem}
-.fx-step::before{
-  content:"";position:absolute;left:-1.55rem;top:.45rem;width:10px;height:10px;border-radius:50%;
-  background:var(--gold);border:2px solid var(--bg);box-shadow:0 0 0 2px var(--gold-soft);
-}
-.fx-step h3{margin:0 0 .25rem;font-size:.95rem;font-weight:700}
-.fx-step p{margin:0;font-size:.85rem;color:var(--muted)}
 
-.fx-stream{
-  border-radius:var(--radius);border:1px solid var(--panel-border);
-  background:var(--panel);overflow:hidden;padding:.6rem 0;box-shadow:var(--shadow-panel);
+.timeline{display:grid;gap:0;padding-left:1.35rem;position:relative}
+.timeline::before{
+  content:"";position:absolute;left:.35rem;top:.4rem;bottom:.4rem;width:2px;
+  background:linear-gradient(180deg,var(--brand),rgba(196,30,42,.15));
 }
-.fx-stream-track{display:flex;gap:.5rem;width:max-content;animation:stream 35s linear infinite}
-.fx-stream-item{
-  flex:0 0 auto;padding:.45rem .9rem;border-radius:var(--radius-pill);font-size:.76rem;white-space:nowrap;
-  background:var(--bg);border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
+.step{position:relative;padding:0 0 1.15rem}
+.step::before{
+  content:"";position:absolute;left:-1.4rem;top:.45rem;width:10px;height:10px;border-radius:50%;
+  background:var(--brand);border:2px solid #fff;box-shadow:0 0 0 2px rgba(196,30,42,.18);
 }
-.fx-stream-item b{color:var(--burgundy);font-weight:600}
-@keyframes stream{to{transform:translateX(-50%)}}
+.step h3{margin:0 0 .25rem;font-size:1rem}
+.step p{margin:0;color:var(--muted);font-size:.9rem}
 
-.fx-grid{display:grid;gap:.65rem}
-.fx-tile{
-  padding:1rem;border-radius:var(--radius);background:var(--panel);
-  border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
+.grid-2{display:grid;gap:.75rem}
+.tile,.mini-card{
+  background:#fff;border:1px solid var(--line);border-radius:14px;padding:1rem;box-shadow:var(--shadow);
 }
-.fx-tile h3{margin:0 0 .35rem;font-size:.9rem;font-weight:700}
-.fx-tile p{margin:0;font-size:.82rem;color:var(--muted)}
+.tile h3,.mini-card h3{margin:0 0 .35rem;font-size:.98rem}
+.tile p,.mini-card p{margin:0;color:var(--muted);font-size:.88rem}
+.mini-card--link{display:block;transition:transform .15s,border-color .15s}
+.mini-card--link:hover{transform:translateY(-2px);border-color:rgba(196,30,42,.28)}
 
-.fx-scroll{display:flex;gap:.75rem;overflow-x:auto;padding:.25rem 0 1rem;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
-.fx-scroll::-webkit-scrollbar{height:4px}
-.fx-scroll::-webkit-scrollbar-thumb{background:var(--accent-dark);border-radius:4px}
-.fx-quote{
-  flex:0 0 min(88%,320px);scroll-snap-align:center;padding:1.15rem;border-radius:var(--radius);
-  background:var(--panel);border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
+.faq{display:grid;gap:.55rem}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.faq-q{
+  width:100%;text-align:left;border:0;background:transparent;cursor:pointer;
+  padding:1rem 2.6rem 1rem 1rem;position:relative;font-weight:600;color:var(--text);
 }
-.fx-quote p{margin:0 0 .65rem;font-size:.88rem;font-style:italic;color:var(--text)}
-.fx-quote cite{font-size:.75rem;color:var(--muted);font-style:normal;font-weight:500}
+.faq-q::after{
+  content:"";position:absolute;right:1rem;top:50%;width:9px;height:9px;
+  border-right:2px solid var(--brand);border-bottom:2px solid var(--brand);
+  transform:translateY(-65%) rotate(45deg);transition:transform .2s;
+}
+.faq-item.is-open .faq-q::after{transform:translateY(-35%) rotate(-135deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.faq-item.is-open .faq-a{max-height:480px}
+.faq-a-inner{padding:0 1rem 1rem;color:var(--muted);font-size:.9rem}
 
-.fx-faq{display:flex;flex-direction:column;gap:.5rem}
-.fx-faq-item{border-radius:var(--radius);border:1px solid var(--panel-border);background:var(--panel);overflow:hidden;box-shadow:var(--shadow-panel)}
-.fx-faq-q{
-  width:100%;text-align:left;padding:1rem 2.75rem 1rem 1rem;border:0;background:transparent;
-  color:var(--text);font-family:var(--font-body);font-weight:500;font-size:.9rem;cursor:pointer;position:relative;
+.legal-box{
+  background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:1.15rem;color:var(--muted);font-size:.88rem;
 }
-.fx-faq-q::after{
-  content:"";position:absolute;right:1rem;top:50%;width:10px;height:10px;
-  border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);
-  transform:translateY(-65%) rotate(45deg);transition:transform .25s;
-}
-.fx-faq-item.is-open .fx-faq-q::after{transform:translateY(-35%) rotate(-135deg)}
-.fx-faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease}
-.fx-faq-item.is-open .fx-faq-a{max-height:520px}
-.fx-faq-a-inner{padding:0 1rem 1rem;font-size:.85rem;color:var(--muted);line-height:1.55}
+.legal-box strong{display:block;color:var(--brand);margin-bottom:.45rem;font-size:.95rem}
 
-.fx-legal{
-  padding:1.15rem;border-radius:var(--radius);font-size:.8rem;color:var(--muted);
-  border:1px solid var(--panel-border);background:var(--surface);box-shadow:var(--shadow-panel);
+.cta-band{
+  margin-top:1rem;padding:1.1rem;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center;
 }
-.fx-legal strong{display:block;color:var(--burgundy);font-weight:700;margin-bottom:.5rem;font-size:.9rem}
+.cta-band p{margin:0 0 .8rem;color:var(--muted)}
 
-.fx-kw{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:1rem}
-.fx-kw span{font-size:.65rem;padding:.32rem .65rem;border-radius:var(--radius-pill);background:var(--gold-light);color:var(--gold-dark);border:1px solid rgba(212,175,55,.3);font-weight:500}
-.fx-prose{font-size:.88rem;font-weight:500;color:var(--muted);line-height:1.7}
-.fx-prose p{margin:0 0 .85rem}
-.fx-prose p:last-child{margin-bottom:0}
-.fx-mini{display:grid;gap:.6rem}
-.fx-mini-card{padding:1rem;border-radius:var(--radius);background:var(--panel);border:1px solid var(--panel-border);box-shadow:var(--shadow-panel)}
-.fx-mini-card h3{margin:0 0 .3rem;font-size:1rem;font-weight:700;color:var(--burgundy)}
-.fx-mini-card p{margin:0;font-size:.82rem;color:var(--muted)}
-.fx-cta-band{
-  margin-top:1.25rem;padding:1.25rem;border-radius:var(--radius);text-align:center;
-  background:var(--surface);
-  border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
+.crumb{
+  display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;width:var(--wrap);margin:0 auto;
+  padding:calc(var(--header) + .85rem) 0 .25rem;font-size:.78rem;color:var(--muted);
 }
-.fx-cta-band p{margin:0 0 .85rem;font-size:.88rem;color:var(--muted)}
+.crumb a{color:var(--brand-dark);font-weight:600}
+.page-hero{padding:1.1rem 0 1.6rem}
+.page-hero h1{margin:0 0 .7rem;font-size:clamp(1.65rem,4vw,2.2rem);letter-spacing:-.03em;line-height:1.15}
+.section{margin:0 0 1.35rem}
+.section h2{margin:0 0 .45rem;font-size:1.15rem;color:var(--brand)}
+.related{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}
+.related a{
+  padding:.4rem .75rem;border-radius:var(--pill);background:var(--soft);border:1px solid rgba(196,30,42,.14);
+  color:var(--brand-dark);font-size:.78rem;font-weight:700;
+}
+.hub-grid{display:grid;gap:.55rem}
+.hub-link{display:block;padding:.95rem 1rem;border-radius:14px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.hub-link:hover{border-color:rgba(196,30,42,.28)}
+.hub-link strong{display:block;margin-bottom:.2rem}
+.hub-link span{color:var(--muted);font-size:.84rem}
+.app-steps{display:grid;gap:.55rem;margin:1rem 0}
+.app-steps li{margin-left:1rem;color:var(--muted)}
+.feature-list{display:grid;gap:.4rem;margin:1rem 0;padding:0;list-style:none}
+.feature-list li{
+  padding:.7rem .85rem;border-radius:12px;background:#fff;border:1px solid var(--line);color:var(--muted);
+}
 
-.fx-crumb{
-  display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;
-  font-size:.72rem;color:var(--muted);margin-bottom:1rem;padding-top:calc(var(--header) + .5rem);
-}
-.fx-crumb a{color:var(--gold-dark)}
-.fx-crumb span{opacity:.5}
-.fx-page-hero{padding:1.25rem 0 1.75rem}
-.fx-page-hero h1{font-size:clamp(1.65rem,6vw,2rem);font-weight:800;margin:0 0 .65rem;letter-spacing:-.03em;line-height:1.15}
-.fx-page-hero .fx-lead{margin:0;max-width:42ch}
-.fx-section{margin-bottom:1.35rem}
-.fx-section h2{font-size:1.15rem;font-weight:700;margin:0 0 .45rem;color:var(--burgundy);letter-spacing:-.02em}
-.fx-section .fx-prose a{color:var(--gold-dark);text-decoration:underline;text-underline-offset:2px}
-.fx-related{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1.25rem}
-.fx-related a{
-  font-size:.76rem;padding:.4rem .75rem;border-radius:var(--radius-pill);
-  background:var(--gold-light);border:1px solid rgba(212,175,55,.3);color:var(--gold-dark);font-weight:600;
-}
-.fx-hub-grid{display:grid;gap:.55rem}
-.fx-hub-link{
-  display:block;padding:.9rem 1rem;border-radius:var(--radius);
-  background:var(--panel);border:1px solid var(--panel-border);box-shadow:var(--shadow-panel);
-  transition:border-color .2s;
-}
-.fx-hub-link:hover{border-color:rgba(212,175,55,.45);box-shadow:var(--shadow-panel)}
-.fx-hub-link strong{display:block;font-size:.9rem;color:var(--text);margin-bottom:.2rem}
-.fx-hub-link span{font-size:.78rem;color:var(--muted)}
-body.page-inner{padding-bottom:1.5rem}
-.fx-mini-card--link{display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .15s}
-.fx-mini-card--link:hover{border-color:rgba(212,175,55,.5);transform:translateY(-2px);box-shadow:var(--shadow-card)}
-.fx-app-actions{display:grid;gap:.5rem}
-.fx-app-guide{font-size:.78rem;color:var(--gold-dark);text-align:center;padding:.35rem;font-weight:600}
-.fx-app-guide:hover{color:var(--burgundy);text-decoration:underline}
-.section-explore{background:var(--surface);border-top:1px solid var(--panel-border);border-bottom:1px solid var(--panel-border)}
-
-.site-foot{
-  margin-top:2rem;padding:2.5rem 0 1.5rem;
-  border-top:1px solid var(--panel-border);
-  background:var(--surface);
-}
-.site-foot-grid{display:grid;gap:1.75rem}
-.site-foot-brand strong{display:block;font-size:1.1rem;font-weight:700;color:var(--burgundy);margin-bottom:.35rem}
-.site-foot-brand p{margin:0;font-size:.85rem;color:var(--muted);max-width:32ch}
-.site-foot-col h3{
-  margin:0 0 .65rem;font-size:.88rem;font-weight:700;
-  color:var(--text);
-}
+.site-foot{margin-top:2rem;padding:2.4rem 0 1.4rem;background:var(--surface);border-top:1px solid var(--line)}
+.site-foot-grid{display:grid;gap:1.5rem}
+.site-foot-brand strong{display:block;color:var(--brand);font-size:1.05rem;margin-bottom:.35rem}
+.site-foot-brand p{margin:0;color:var(--muted);max-width:34ch}
+.site-foot-col h3{margin:0 0 .55rem;font-size:.9rem}
 .site-foot-col ul{list-style:none;margin:0;padding:0}
-.site-foot-col li{margin-bottom:.4rem}
-.site-foot-col a{font-size:.82rem;color:var(--muted);line-height:1.4}
-.site-foot-col a:hover{color:var(--gold-dark)}
-.site-foot-all{margin-top:.5rem}
-.site-foot-all a{font-size:.82rem;font-weight:600;color:var(--gold-dark)}
-.site-foot-bottom{
-  margin-top:1.75rem;padding-top:1rem;border-top:1px solid var(--panel-border);
-  text-align:center;font-size:.75rem;color:var(--muted);line-height:1.5;
-}
-.site-foot-bottom a{color:var(--burgundy)}
+.site-foot-col li{margin:0 0 .35rem}
+.site-foot-col a{color:var(--muted);font-size:.86rem}
+.site-foot-col a:hover{color:var(--brand)}
+.site-foot-all{margin-top:.45rem}
+.site-foot-all a{color:var(--brand);font-weight:700}
+.site-foot-bottom{margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--line);text-align:center;color:var(--muted);font-size:.78rem}
+.site-foot-bottom a{color:var(--brand)}
+.fx-btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;min-height:50px;padding:0 1.15rem;border-radius:12px;border:1px solid transparent;font-weight:700;font-size:.92rem;cursor:pointer;width:100%}
+.fx-btn--primary{background:linear-gradient(180deg,#e53945,#c41e2a);color:#fff;border-color:#a81822}
+.fx-btn--ghost{background:#fff;color:var(--brand);border-color:var(--line)}
+.fx-btn--dark{background:linear-gradient(180deg,#222,#0a0a0a);color:#fff}
+.fx-hub-grid{display:grid;gap:.55rem}
+.fx-hub-link{display:block;padding:.95rem 1rem;border-radius:14px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.fx-hub-link strong{display:block;margin-bottom:.2rem}
+.fx-hub-link span{color:var(--muted);font-size:.84rem}
+.fx-crumb{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;width:var(--wrap);margin:0 auto;padding:calc(var(--header) + .85rem) 0 .25rem;font-size:.78rem;color:var(--muted)}
+.fx-crumb a{color:var(--brand-dark);font-weight:600}
+.fx-page-hero{padding:1.1rem 0 1.6rem}
+.fx-page-hero h1{margin:0 0 .7rem;font-size:clamp(1.65rem,4vw,2.2rem);letter-spacing:-.03em;line-height:1.15}
+.fx-lead{margin:0 0 1.1rem;color:var(--muted);font-size:1.02rem;max-width:46ch}
+.fx-pill{display:inline-flex;align-items:center;padding:.35rem .8rem;border-radius:var(--pill);background:var(--soft);color:var(--brand);border:1px solid rgba(196,30,42,.18);font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 1rem}
+.fx-section{margin:0 0 1.35rem}
+.fx-section h2{margin:0 0 .45rem;font-size:1.15rem;color:var(--brand)}
+.fx-prose{color:var(--muted)}
+.fx-prose a{color:var(--brand);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.fx-related{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:1rem}
+.fx-related a{padding:.4rem .75rem;border-radius:var(--pill);background:var(--soft);border:1px solid rgba(196,30,42,.14);color:var(--brand-dark);font-size:.78rem;font-weight:700}
+.fx-faq{display:grid;gap:.55rem}
+.fx-faq-item{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.fx-faq-q{width:100%;text-align:left;border:0;background:transparent;cursor:pointer;padding:1rem 2.6rem 1rem 1rem;position:relative;font-weight:600}
+.fx-faq-a{max-height:0;overflow:hidden}
+.fx-faq-item.is-open .fx-faq-a{max-height:480px}
+.fx-faq-a-inner{padding:0 1rem 1rem;color:var(--muted);font-size:.9rem}
+.fx-cta-band{margin-top:1rem;padding:1.1rem;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center}
+.fx-mini{display:grid;gap:.75rem}
+.fx-mini-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1rem;box-shadow:var(--shadow)}
+.fx-mini-card--link{display:block}
+.section-explore{background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 
-.fx-foot{padding:1.5rem 0;text-align:center;font-size:.75rem;color:var(--muted)}
-.fx-foot a{color:var(--gold-dark);font-weight:500}
-
-.fx-dock{
+.dock{
   position:fixed;left:0;right:0;bottom:0;z-index:90;
   padding:.55rem 1rem calc(.55rem + var(--safe-b));
-  background:rgba(255,255,255,.96);backdrop-filter:blur(10px);
-  border-top:1px solid var(--panel-border);
-  box-shadow:0 -4px 20px rgba(212,175,55,.12);
+  background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);
 }
-.fx-dock-inner{max-width:440px;margin:0 auto;display:grid;grid-template-columns:1fr 1.5fr;gap:.55rem}
-.fx-dock .fx-btn{min-height:48px;font-size:.88rem}
+.dock-inner{width:min(100%,440px);margin:0 auto;display:grid;grid-template-columns:1fr 1.4fr;gap:.5rem}
+.dock .btn{min-height:46px}
+body.page-inner{padding-bottom:1.5rem}
 
-@media(min-width:640px){
-  .wrap{width:min(100% - 2.5rem,720px)}
-  .fx-dock-inner{max-width:720px}
-  .fx-stats{grid-template-columns:repeat(4,1fr)}
-  .fx-apps{display:grid;grid-template-columns:1fr 1fr}
-  .fx-hub-grid{grid-template-columns:1fr 1fr}
+@media(min-width:720px){
+  .shell-link{display:inline-flex}
+  .shell-cta{display:inline-flex !important;width:auto;min-height:38px;padding:0 .9rem;font-size:.8rem}
+  .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grid-2,.hub-grid,.mini-grid{grid-template-columns:1fr 1fr}
   .site-foot-grid{grid-template-columns:1.4fr 1fr 1fr}
-  .shell-link{display:inline-block}
-  .shell-cta.fx-btn{display:inline-flex;min-height:32px;padding:0 .75rem;font-size:.72rem}
   body{padding-bottom:0}
-  .fx-dock{display:none}
+  .dock{display:none}
 }
-@media(min-width:900px){
-  .wrap{width:min(100% - 3rem,1040px)}
-  .fx-hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:center}
-  .fx-hero-visual{margin-top:0}
-  .fx-actions{grid-template-columns:1fr 1fr}
-  .fx-actions .fx-btn--primary{grid-column:1/-1}
-  .fx-mini{grid-template-columns:repeat(2,1fr)}
-  .fx-grid{grid-template-columns:repeat(2,1fr)}
+@media(min-width:960px){
+  .hero-grid{grid-template-columns:1.05fr .95fr;gap:2rem;align-items:start}
+  .hero-actions,.card-actions{grid-template-columns:1fr 1fr}
+  .featured-grid{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){
-  .fx-stream-track{animation:none}
-  .bg-orb,.bg-shimmer{animation:none}
   html{scroll-behavior:auto}
+  .drawer-panel,.drawer-bg,.faq-a,.mini-card--link{transition:none}
 }
 `;
 
@@ -668,21 +567,21 @@ body.page-inner{padding-bottom:1.5rem}
   if(menuClose)menuClose.addEventListener("click",closeDrawer);
   if(drawerBg)drawerBg.addEventListener("click",closeDrawer);
   drawer&&drawer.querySelectorAll("a").forEach(function(a){a.addEventListener("click",closeDrawer);});
-  document.querySelectorAll(".fx-faq-q").forEach(function(btn){
+  document.querySelectorAll(".faq-q,.fx-faq-q").forEach(function(btn){
     btn.addEventListener("click",function(){
-      var item=btn.closest(".fx-faq-item");
+      var item=btn.closest(".faq-item,.fx-faq-item");
+      if(!item) return;
       var was=item.classList.contains("is-open");
-      document.querySelectorAll(".fx-faq-item.is-open").forEach(function(el){el.classList.remove("is-open");});
+      document.querySelectorAll(".faq-item.is-open,.fx-faq-item.is-open").forEach(function(el){el.classList.remove("is-open");});
       if(!was)item.classList.add("is-open");
     });
   });
-  var track=document.getElementById("winnersTicker");
-  if(track&&!matchMedia("(prefers-reduced-motion:reduce)").matches){track.innerHTML=track.innerHTML+track.innerHTML;}
 })();`;
 
   fs.writeFileSync(path.join(OUT, "assets/styles.css"), styles.trim());
   fs.writeFileSync(path.join(OUT, "assets/app.js"), appJs);
 }
+
 
 function copyStaticAssets() {
   copyDir(path.join(SOURCE, "static", "images"), path.join(OUT, "images"));
@@ -704,9 +603,9 @@ function copyDir(src, dest) {
 
 function writeHomePage() {
   const h = home.hero;
-  const title = "Best Rummy App India 2026 | Rummy APK Download & Bonus Guide";
+  const title = "Y1 Game Download & IE777 App India 2026 | Invite Guides";
   const description =
-    "Compare best rummy apps in India — Junglee Rummy APK, Mast179, RVIP, 66 Game & HU777. Official rummy APK download, welcome bonus, referral codes, 13-card rummy tips & safe install guide.";
+    "Y1 Game download and IE777 app India guides: invite registration, APK safety, referral links, and Y1 vs IE777 comparison. Independent site, not the official operator websites.";
 
   const html = layout({
     pageType: "home",
@@ -722,7 +621,8 @@ function writeHomePage() {
       orgLd(),
       webPageLd({ slug: "", h1: title, metaDescription: description, intro: description }),
       faqLd(faqs),
-      appsListLd(apps),
+      appsListLd(featuredApps.length ? featuredApps : apps.slice(0, 2)),
+      ...featuredApps.map(softwareAppLd).filter(Boolean),
     ],
   });
 
@@ -736,170 +636,161 @@ function writeHomePage() {
       canonicalPath: "/",
       robotsIndexable: false,
       skipCanonical: true,
-      body: `<section class="block"><div class="wrap"><h1 class="block-title">Page not found</h1><p class="block-desc">Browse <a href="/guides/">guides</a> or return <a href="/">home</a>.</p><a class="fx-btn fx-btn--primary" href="/" style="margin-top:1rem">Go home</a></div></section>`,
+      body: `<section class="block"><div class="wrap"><h1 class="block-title">Page not found</h1><p class="block-desc">Browse <a href="/guides/">guides</a>, <a href="/y1-game/">Y1 Game</a>, or <a href="/ie777/">IE777</a>.</p><a class="btn btn-primary" href="/" style="margin-top:1rem;max-width:240px">Go home</a></div></section>`,
     })
   );
 }
 
-function homeBody(h) {
-  const streamItems = home.winners
-    .map((w) => `<span class="fx-stream-item"><b>${escapeHtml(w.name)}</b> ${escapeHtml(w.amount)} · ${escapeHtml(w.game)}</span>`)
+function featuredAppCard(app, badge) {
+  if (!app) return "";
+  const logo = app.logo
+    ? `<img class="featured-logo" src="${escapeHtml(app.logo)}" alt="${escapeHtml(app.name)} logo" width="64" height="64" loading="eager">`
+    : "";
+  const keywords = (app.seoKeywords || [])
+    .slice(0, 4)
+    .map((k) => `<span>${escapeHtml(k)}</span>`)
     .join("");
+  return `
+    <article class="featured-card">
+      <div class="featured-top">
+        ${logo}
+        <div>
+          <span class="featured-badge">${escapeHtml(badge)}</span>
+          <h3>${escapeHtml(app.name)}</h3>
+          <p>${escapeHtml(app.shortDescription)}</p>
+        </div>
+      </div>
+      <div class="kw" aria-label="${escapeHtml(app.name)} keywords">${keywords}</div>
+      <div class="card-actions">
+        <a class="btn btn-primary" href="${escapeHtml(app.downloadUrl)}" target="_blank" rel="${sponsoredRel()}">Download ${escapeHtml(app.name)}</a>
+        <a class="btn btn-ghost" href="${appGuideHref(app.slug)}">Read ${escapeHtml(app.name)} guide</a>
+        <p class="featured-note">Sponsored referral link. Offers change. Verify terms in-app.</p>
+      </div>
+    </article>`;
+}
 
-  const appCards = apps
-    .map(
-      (app, i) => `
-    <article class="fx-app">
-      <div class="fx-app-top">
-        <h3>${escapeHtml(app.name)}</h3>
-        <span class="fx-score">${(4.5 + (i % 3) * 0.1).toFixed(1)}</span>
-      </div>
-      <p>${escapeHtml(app.shortDescription)}</p>
-      <div class="fx-tags">${(app.seoKeywords || app.features).slice(0, 3).map((f) => `<span class="fx-tag">${escapeHtml(f)}</span>`).join("")}</div>
-      <div class="fx-app-actions">
-        <a class="fx-btn fx-btn--primary" href="${escapeHtml(app.downloadUrl)}" target="_blank" rel="${sponsoredRel()}">Download APK</a>
-        <a class="fx-app-guide" href="${appGuideHref(app.slug)}">Read ${escapeHtml(app.name)} guide →</a>
-      </div>
-    </article>`
-    )
-    .join("");
+
+function homeBody(h) {
+  const featureCards = [
+    featuredAppCard(primaryApp, "Featured · Y1"),
+    featuredAppCard(secondaryApp, "Featured · IE777"),
+  ].join("");
 
   const kw = (home.keywords || []).map((k) => `<span>${escapeHtml(k)}</span>`).join("");
   const seoParas = (home.seoIntro?.paragraphs || []).map((p) => `<p>${escapeHtml(p)}</p>`).join("");
   const gameCards = (home.games || [])
     .map(
       (g) =>
-        `<a class="fx-mini-card fx-mini-card--link" href="${pagePath(g.slug)}"><h3>${escapeHtml(g.name)}</h3><p>${escapeHtml(g.desc)}</p></a>`
+        `<a class="mini-card mini-card--link" href="${pagePath(g.slug)}"><h3>${escapeHtml(g.name)}</h3><p>${escapeHtml(g.desc)}</p></a>`
     )
     .join("");
   const bonusCards = (home.bonuses || [])
     .map(
       (b) =>
-        `<a class="fx-mini-card fx-mini-card--link" href="${pagePath(b.slug)}"><h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(b.desc)}</p></a>`
+        `<a class="mini-card mini-card--link" href="${pagePath(b.slug)}"><h3>${escapeHtml(b.title)}</h3><p>${escapeHtml(b.desc)}</p></a>`
     )
     .join("");
   const apkSteps = (home.apkGuide?.steps || [])
-    .map((step) => `<article class="fx-step"><h3>${escapeHtml(step.title)}</h3><p>${escapeHtml(step.body)}</p></article>`)
+    .map((step) => `<article class="step"><h3>${escapeHtml(step.title)}</h3><p>${escapeHtml(step.body)}</p></article>`)
     .join("");
 
   return `
-  <section class="fx-hero" id="top">
-    <div class="fx-hero-wave" aria-hidden="true"></div>
-    <div class="wrap fx-hero-grid">
-      <div class="fx-hero-copy">
-        <p class="fx-pill">${escapeHtml(h.badge)}</p>
-        <h1>${escapeHtml(h.title)} <span class="fx-highlight">${escapeHtml(h.titleHighlight)}</span></h1>
-        <p class="fx-lead">${escapeHtml(h.subtitle)}</p>
-        <div class="fx-chip"><span class="fx-chip-dot" aria-hidden></span><div><strong>${escapeHtml(h.bonusLabel)}</strong> ${escapeHtml(h.bonusText)}</div></div>
-        <div class="fx-actions">
-          <a class="fx-btn fx-btn--primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">${escapeHtml(h.ctaPrimary)}</a>
-          <a class="fx-btn fx-btn--ghost" href="#apps">${escapeHtml(h.ctaSecondary)}</a>
+  <section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="hero-brand">
+          ${
+            primaryApp?.logo
+              ? `<img class="hero-logo" src="${escapeHtml(primaryApp.logo)}" alt="${escapeHtml(primaryApp.name)} logo" width="300" height="300" fetchpriority="high">`
+              : ""
+          }
+          <a class="btn btn-primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">${escapeHtml(h.ctaPrimary)}</a>
+          <p class="hero-brand-note">Sponsored invite link for ${escapeHtml(primaryApp?.name || "Y1 Game")}.</p>
         </div>
-        <p class="fx-hero-hint"><span class="fx-hero-hint-icon" aria-hidden>⏱</span> Official links · Compare in under 2 minutes</p>
+        <p class="pill">${escapeHtml(h.badge)}</p>
+        <h1>${escapeHtml(h.title)} <span class="hero-highlight">${escapeHtml(h.titleHighlight)}</span></h1>
+        <p class="lead">${escapeHtml(h.subtitle)}</p>
+        <div class="note-card"><span class="note-dot" aria-hidden="true"></span><div><strong>${escapeHtml(h.bonusLabel)}</strong> ${escapeHtml(h.bonusText)}</div></div>
+        <div class="hero-actions">
+          <a class="btn btn-dark" href="${escapeHtml(secondaryDownload)}" target="_blank" rel="${sponsoredRel()}">${escapeHtml(secondaryApp?.name || "IE777")} download</a>
+          <a class="btn btn-ghost" href="/y1-vs-ie777/">${escapeHtml(h.ctaSecondary)}</a>
+        </div>
+        <p class="disclose">Independent site. Download buttons are sponsored invite links for ${escapeHtml(primaryApp?.name || "Y1")} and ${escapeHtml(secondaryApp?.name || "IE777")}.</p>
       </div>
-      <div class="fx-hero-visual">
-        <div class="fx-frame">
-          <img src="${HERO_IMAGE_PATH}" alt="Best rummy app India — APK download comparison" width="480" height="360" loading="eager" fetchpriority="high" decoding="async">
-        </div>
-        <div class="fx-float-card fx-float-card--mint"><strong>5+ apps</strong><span>Compared side by side</span></div>
-        <div class="fx-float-card fx-float-card--gold"><strong>Official APK</strong><span>Verified download paths</span></div>
+      <div id="featured">
+        <div class="featured-grid">${featureCards}</div>
       </div>
     </div>
   </section>
 
   <section class="block" id="trust">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Trust</p><h2 class="block-title">Independent rummy guides</h2><p class="block-desc">Not affiliated with Junglee, Mast179, RVIP, 66 Game or HU777.</p></div>
-      <div class="fx-stats">${home.trust.map((t) => `<div class="fx-stat"><b>${escapeHtml(t.value)}</b><span>${escapeHtml(t.label)}</span></div>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">At a glance</p><h2 class="block-title">Independent Y1 Game and IE777 guides</h2><p class="block-desc">${escapeHtml(home.featuredNotes?.body || "We are not affiliated with Y1 Game or IE777.")}</p></div>
+      <div class="stats">${home.trust.map((t) => `<div class="stat"><b>${escapeHtml(t.value)}</b><span>${escapeHtml(t.label)}</span></div>`).join("")}</div>
     </div>
   </section>
 
-  <section class="block" id="guide">
+  <section class="block block--soft" id="guide">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Guide</p><h2 class="block-title">${escapeHtml(home.seoIntro?.title || "Online rummy India")}</h2><p class="block-desc"><a href="/guides/">View all ${getAllPages().length} pages</a> · <a href="/apps/">App guides</a></p></div>
-      <div class="fx-prose">${seoParas}</div>
-      <div class="fx-kw" aria-label="Topics">${kw}</div>
-    </div>
-  </section>
-
-  <section class="block" id="apps">
-    <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Rummy apps</p><h2 class="block-title">Best rummy app download — compared</h2><p class="block-desc"><a href="/best-rummy-apps-india/">Best apps guide</a> · <a href="/apps/">All app pages</a></p></div>
-      <div class="fx-apps">${appCards}</div>
-      <div class="fx-cta-band">
-        <p>Top pick: <strong>${escapeHtml(apps[0]?.name || "Junglee Rummy")}</strong> — official invite link below.</p>
-        <a class="fx-btn fx-btn--primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Download ${escapeHtml(apps[0]?.name || "Rummy")} APK</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="block" id="games">
-    <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Game types</p><h2 class="block-title">Rummy & skill games</h2><p class="block-desc">Tap a topic for the full guide.</p></div>
-      <div class="fx-mini">${gameCards}</div>
-    </div>
-  </section>
-
-  <section class="block" id="bonuses">
-    <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Bonuses</p><h2 class="block-title">Welcome bonus & referral codes</h2><p class="block-desc"><a href="/welcome-bonus/">Welcome bonus</a> · <a href="/referral-bonus/">Referral</a> · <a href="/cashback-offer/">Cashback</a></p></div>
-      <div class="fx-mini">${bonusCards}</div>
-    </div>
-  </section>
-
-  <section class="block" id="apk">
-    <div class="wrap">
-      <div class="block-head"><p class="eyebrow">APK</p><h2 class="block-title">${escapeHtml(home.apkGuide?.title || "Rummy APK download")}</h2><p class="block-desc"><a href="/download-apk/">Full APK guide</a> · <a href="/rummy-apk-download/">Rummy APK page</a></p></div>
-      <div class="fx-timeline">${apkSteps}</div>
+      <div class="block-head"><p class="eyebrow">Overview</p><h2 class="block-title">${escapeHtml(home.seoIntro?.title || "Invite app guides")}</h2><p class="block-desc"><a href="/y1-game/">Y1 Game download</a> · <a href="/ie777/">IE777 registration</a> · <a href="/guides/">${getAllPages().length} pages</a></p></div>
+      <div class="prose">${seoParas}</div>
+      <div class="kw" aria-label="Homepage topics">${kw}</div>
     </div>
   </section>
 
   <section class="block" id="how">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Quick start</p><h2 class="block-title">How to play real-money rummy</h2></div>
-      <div class="fx-timeline">${home.howItWorks.map((s) => `<article class="fx-step"><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.body)}</p></article>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">Registration</p><h2 class="block-title">How Y1 Game and IE777 invite downloads work</h2></div>
+      <div class="timeline">${home.howItWorks.map((s) => `<article class="step"><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.body)}</p></article>`).join("")}</div>
+    </div>
+  </section>
+
+  <section class="block block--soft" id="apk">
+    <div class="wrap">
+      <div class="block-head"><p class="eyebrow">Safety</p><h2 class="block-title">${escapeHtml(home.apkGuide?.title || "Safe install")}</h2><p class="block-desc"><a href="/download-apk/">Full APK guide</a> · <a href="/safe-rummy-tips/">Security tips</a></p></div>
+      <div class="timeline">${apkSteps}</div>
     </div>
   </section>
 
   <section class="block" id="benefits">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Why us</p><h2 class="block-title">Why Best Rummy Hubs</h2></div>
-      <div class="fx-grid">${home.whyChoose.map((w) => `<article class="fx-tile"><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.body)}</p></article>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">Editorial</p><h2 class="block-title">How this site works</h2></div>
+      <div class="grid-2">${home.whyChoose.map((w) => `<article class="tile"><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.body)}</p></article>`).join("")}</div>
     </div>
   </section>
 
-  <section class="block" id="security">
+  <section class="block block--soft" id="security">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Safety</p><h2 class="block-title">KYC, UPI & responsible play</h2></div>
-      <div class="fx-grid">${(home.securityTips || []).map((w) => `<article class="fx-tile"><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.body)}</p></article>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">Protect yourself</p><h2 class="block-title">KYC, OTP and responsible play</h2></div>
+      <div class="grid-2">${(home.securityTips || []).map((w) => `<article class="tile"><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.body)}</p></article>`).join("")}</div>
     </div>
   </section>
 
-  <section class="block" id="activity">
+  <section class="block" id="games">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Activity</p><h2 class="block-title">Recent wins</h2><p class="block-desc">Illustrative — not guaranteed.</p></div>
-      <div class="fx-stream"><div class="fx-stream-track" id="winnersTicker">${streamItems}</div></div>
+      <div class="block-head"><p class="eyebrow">More guides</p><h2 class="block-title">Related topics</h2></div>
+      <div class="grid-2 mini-grid">${gameCards}</div>
     </div>
   </section>
 
-  <section class="block" id="reviews">
+  <section class="block block--soft" id="bonuses">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">Reviews</p><h2 class="block-title">Player feedback</h2></div>
-      <div class="fx-scroll">${home.testimonials.map((t) => `<blockquote class="fx-quote"><p>${escapeHtml(t.quote)}</p><cite>${escapeHtml(t.name)} · ${escapeHtml(t.city)}</cite></blockquote>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">Bonuses</p><h2 class="block-title">Read terms before funding</h2></div>
+      <div class="grid-2 mini-grid">${bonusCards}</div>
     </div>
   </section>
 
   <section class="block" id="faq">
     <div class="wrap">
-      <div class="block-head"><p class="eyebrow">FAQ</p><h2 class="block-title">Rummy APK & bonus FAQ</h2><p class="block-desc"><a href="/faqs/">Full FAQ page</a></p></div>
-      <div class="fx-faq">${faqs.map((f) => `<div class="fx-faq-item"><button type="button" class="fx-faq-q">${escapeHtml(f.question)}</button><div class="fx-faq-a"><div class="fx-faq-a-inner">${escapeHtml(f.answer)}</div></div></div>`).join("")}</div>
+      <div class="block-head"><p class="eyebrow">FAQ</p><h2 class="block-title">Y1 Game, IE777 and this site</h2><p class="block-desc"><a href="/faqs/">Full FAQ page</a></p></div>
+      <div class="faq">${faqs.map((f) => `<div class="faq-item"><button type="button" class="faq-q">${escapeHtml(f.question)}</button><div class="faq-a"><div class="faq-a-inner">${escapeHtml(f.answer)}</div></div></div>`).join("")}</div>
     </div>
   </section>
 
-  <section class="block" id="legal">
+  <section class="block block--soft" id="legal">
     <div class="wrap">
-      <div class="fx-legal">
-        <strong>Responsible gaming & legality</strong>
+      <div class="legal-box">
+        <strong>Responsible gaming and legality</strong>
         <p>${escapeHtml(home.responsibleGaming)}</p>
         <p style="margin-top:.75rem">${escapeHtml(siteConfig.independentNotice)}</p>
         <p style="margin-top:.75rem">${escapeHtml(siteConfig.disclaimerShort)}</p>
@@ -909,14 +800,15 @@ function homeBody(h) {
 
   ${homeExploreSection()}
 
-  <div class="fx-dock">
-    <div class="fx-dock-inner">
-      <a class="fx-btn fx-btn--ghost" href="#apps">Apps</a>
-      <a class="fx-btn fx-btn--primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Rummy APK</a>
+  <div class="dock">
+    <div class="dock-inner">
+      <a class="btn btn-ghost" href="${escapeHtml(secondaryDownload)}" target="_blank" rel="${sponsoredRel()}">IE777</a>
+      <a class="btn btn-primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Y1 Download</a>
     </div>
   </div>
   `;
 }
+
 
 function layout({
   pageType = "home",
@@ -958,12 +850,6 @@ function layout({
   ${analyticsSnippet()}
 </head>
 <body${bodyClass}>
-  <div class="bg-motion" aria-hidden="true">
-    <span class="bg-orb bg-orb--1"></span>
-    <span class="bg-orb bg-orb--2"></span>
-    <span class="bg-orb bg-orb--3"></span>
-    <span class="bg-shimmer"></span>
-  </div>
   <header class="shell">
     <div class="shell-inner">
       <a class="brand" href="${brandHref}">
@@ -971,8 +857,9 @@ function layout({
         <span class="brand-text">${escapeHtml(siteConfig.name)}</span>
       </a>
       <div class="shell-actions">
-        <a class="shell-link" href="/guides/">Guides</a>
-        <a class="fx-btn fx-btn--dark shell-cta" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Download</a>
+        <a class="shell-link" href="/y1-game/">Y1 Game</a>
+        <a class="shell-link" href="/ie777/">IE777</a>
+        <a class="btn btn-dark shell-cta" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Y1 Download</a>
         <button type="button" class="nav-toggle" id="menuBtn" aria-label="Open menu">☰</button>
       </div>
     </div>
@@ -983,8 +870,9 @@ function layout({
       <p class="menu-panel-title">Menu</p>
       ${menuHtml}
       <div class="drawer-foot">
-        <a class="fx-btn fx-btn--primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Download APK</a>
-        <button type="button" class="fx-btn fx-btn--ghost" id="menuClose">Close menu</button>
+        <a class="btn btn-primary" href="${escapeHtml(primaryDownload)}" target="_blank" rel="${sponsoredRel()}">Y1 Game download</a>
+        <a class="btn btn-ghost" href="${escapeHtml(secondaryDownload)}" target="_blank" rel="${sponsoredRel()}">IE777 download</a>
+        <button type="button" class="btn btn-ghost" id="menuClose">Close menu</button>
       </div>
     </nav>
   </div>
@@ -993,6 +881,7 @@ function layout({
 </body>
 </html>`;
 }
+
 
 function renderSiteMenu() {
   return menuSections
@@ -1027,7 +916,7 @@ function appToSeoPage(app) {
     metaTitle: `${app.name} APK Download India 2026 | Guide & Install`,
     metaDescription: app.shortDescription,
     keywords: (app.seoKeywords || []).slice(0, 5).join(", "),
-    h1: `${app.name} — app guide`,
+    h1: `${app.name} app guide`,
     intro: app.overview || app.shortDescription,
     sections: [
       {
@@ -1042,7 +931,7 @@ function appToSeoPage(app) {
     faqs: [
       {
         question: `How do I download ${app.name}?`,
-        answer: "Tap the official download button on this page. Install only from the operator's verified flow — never random chat APKs.",
+        answer: "Tap the official download button on this page. Install only from the operator's verified flow. Never random chat APKs.",
       },
       {
         question: "Is this the official website?",
@@ -1081,7 +970,7 @@ function siteFooter() {
         <p>${escapeHtml(siteConfig.tagline)}</p>
         <p class="site-foot-all" style="margin-top:.75rem"><a href="/guides/">Browse all ${getAllPages().length} pages</a></p>
       </div>
-      ${col("Popular", [seoPages.find((p) => p.slug === "best-rummy-apps-india"), seoPages.find((p) => p.slug === "junglee-rummy"), seoPages.find((p) => p.slug === "download-apk"), seoPages.find((p) => p.slug === "rummy-apk-download"), seoPages.find((p) => p.slug === "faqs")].filter(Boolean), "/guides/", "All pages →")}
+      ${col("Popular", [seoPages.find((p) => p.slug === "y1-game"), seoPages.find((p) => p.slug === "ie777"), seoPages.find((p) => p.slug === "y1-vs-ie777"), seoPages.find((p) => p.slug === "download-apk"), seoPages.find((p) => p.slug === "faqs")].filter(Boolean), "/apps/", "All apps →")}
       ${col("Games", games, "/guides/#games", "More game guides →")}
       ${col("Bonuses & APK", [...bonuses, ...apk], "/guides/", "Bonus & APK guides →")}
     </div>
@@ -1165,7 +1054,7 @@ function pageMeta({
     <meta property="og:description" content="${escapeHtml(description)}">
     <meta property="og:url" content="${canonical}">
     <meta property="og:image" content="${img}">
-    <meta property="og:image:alt" content="${escapeHtml(siteConfig.name)} — rummy app guides India">
+    <meta property="og:image:alt" content="${escapeHtml(siteConfig.name)} rummy app guides India">
     ${dateMeta}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="${escapeHtml(title)}">
@@ -1207,7 +1096,7 @@ ${urlNodes}
 
   const robots = INDEXABLE
     ? `# ${siteConfig.name}\nUser-agent: *\nAllow: /\nDisallow: /404/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`
-    : `# Staging — do not index\nUser-agent: *\nDisallow: /\n`;
+    : `# Staging, do not index\nUser-agent: *\nDisallow: /\n`;
   fs.writeFileSync(path.join(OUT, "robots.txt"), robots);
 
   const allPages = getAllPages();
@@ -1394,9 +1283,9 @@ function seoPageBody(page) {
   const sections = (page.sections || [])
     .map(
       (s) => `
-      <article class="fx-section">
+      <article class="section">
         <h2>${escapeHtml(s.heading)}</h2>
-        <div class="fx-prose"><p>${parseInlineLinks(s.body)}</p></div>
+        <div class="prose"><p>${parseInlineLinks(s.body)}</p></div>
       </article>`
     )
     .join("");
@@ -1404,13 +1293,13 @@ function seoPageBody(page) {
   const faqBlock =
     pageFaqs.length > 0
       ? `
-  <section class="block" id="faq">
+  <section class="block block--soft" id="faq">
     <div class="wrap">
       <div class="block-head"><p class="eyebrow">FAQ</p><h2 class="block-title">Common questions</h2></div>
-      <div class="fx-faq">${pageFaqs
+      <div class="faq">${pageFaqs
         .map(
           (f) =>
-            `<div class="fx-faq-item"><button type="button" class="fx-faq-q">${escapeHtml(f.question)}</button><div class="fx-faq-a"><div class="fx-faq-a-inner">${escapeHtml(f.answer)}</div></div></div>`
+            `<div class="faq-item"><button type="button" class="faq-q">${escapeHtml(f.question)}</button><div class="faq-a"><div class="faq-a-inner">${escapeHtml(f.answer)}</div></div></div>`
         )
         .join("")}</div>
     </div>
@@ -1421,21 +1310,38 @@ function seoPageBody(page) {
     .map((href) => `<a href="${href}">${escapeHtml(relatedLabel(href))}</a>`)
     .join("");
 
+  const keywordChips = (app?.seoKeywords || (page.keywords || "").split(",").map((k) => k.trim()).filter(Boolean))
+    .slice(0, 6)
+    .map((k) => `<span>${escapeHtml(k)}</span>`)
+    .join("");
+
+  const steps = app?.howToDownload?.length
+    ? `<ol class="app-steps">${app.howToDownload.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>`
+    : "";
+
+  const features = app?.features?.length
+    ? `<ul class="feature-list">${app.features.map((f) => `<li>${escapeHtml(f)}</li>`).join("")}</ul>`
+    : "";
+
   const downloadCta = app
     ? `
-      <div class="fx-cta-band">
-        <p>Official ${escapeHtml(app.name)} install link — verify terms in-app. <small>Sponsored referral link.</small></p>
-        <a class="fx-btn fx-btn--primary" href="${escapeHtml(app.downloadUrl)}" target="_blank" rel="${sponsoredRel()}">Download ${escapeHtml(app.name)}</a>
+      <div class="app-brand">
+        ${app.logo ? `<img class="app-brand-logo" src="${escapeHtml(app.logo)}" alt="${escapeHtml(app.name)} logo" width="300" height="300" fetchpriority="high">` : ""}
+        <a class="btn btn-primary" href="${escapeHtml(app.downloadUrl)}" target="_blank" rel="${sponsoredRel()}">Download ${escapeHtml(app.name)}</a>
+        <p class="app-brand-note">Official ${escapeHtml(app.name)} invite link. Verify terms in-app. Sponsored referral link.</p>
       </div>`
     : "";
 
   return `
-  <section class="fx-page-hero">
+  <section class="page-hero">
     <div class="wrap">
-      <p class="fx-pill">${escapeHtml(CATEGORY_LABELS[page.category] || "Guide")}</p>
+      <p class="pill">${escapeHtml(CATEGORY_LABELS[page.category] || "Guide")}</p>
       <h1>${escapeHtml(page.h1)}</h1>
-      <p class="fx-lead">${escapeHtml(page.intro)}</p>
+      <p class="lead">${escapeHtml(page.intro)}</p>
+      ${keywordChips ? `<div class="kw" aria-label="Page keywords">${keywordChips}</div>` : ""}
       ${downloadCta}
+      ${steps}
+      ${features}
     </div>
   </section>
   <section class="block">
@@ -1445,11 +1351,12 @@ function seoPageBody(page) {
   <section class="block">
     <div class="wrap">
       <p class="eyebrow">Related</p>
-      <div class="fx-related">${related}</div>
-      <p class="fx-prose" style="margin-top:1.25rem"><a href="/guides/">All guides</a> · <a href="/apps/">Apps</a> · <a href="/">Homepage</a></p>
+      <div class="related">${related}</div>
+      <p class="prose" style="margin-top:1.25rem"><a href="/guides/">All guides</a> · <a href="/apps/">Apps</a> · <a href="/">Homepage</a></p>
     </div>
   </section>`;
 }
+
 
 function writePageHtml(page) {
   const keywords = page.keywords || `${page.h1}, rummy India`;
@@ -1458,6 +1365,11 @@ function writePageHtml(page) {
   if (page.category !== "legal") schemas.push(articleLd(page));
   const pageFaqs = page.useGlobalFaqs ? faqs : page.faqs || [];
   if (pageFaqs.length) schemas.push(faqLd(pageFaqs));
+  const app = page.appSlug ? apps.find((a) => a.slug === page.appSlug) : null;
+  if (app) {
+    const soft = softwareAppLd(app);
+    if (soft) schemas.push(soft);
+  }
   return layout({
     pageType: "inner",
     title: page.metaTitle,
@@ -1540,7 +1452,7 @@ function writeGuidesHub() {
     : "";
 
   const body = `
-  <section class="fx-page-hero"><div class="wrap"><h1>Rummy guides library</h1><p class="fx-lead">Professional guides for APK install, bonuses, rules, legality, and app comparisons — ${getAllPages().length} pages for India.</p><a class="fx-btn fx-btn--ghost" href="/" style="margin-top:1rem;max-width:200px">← Homepage</a></div></section>
+  <section class="fx-page-hero"><div class="wrap"><h1>Rummy guides library</h1><p class="fx-lead">Professional guides for APK install, bonuses, rules, legality, and app comparisons, ${getAllPages().length} pages for India.</p><a class="fx-btn fx-btn--ghost" href="/" style="margin-top:1rem;max-width:200px">← Homepage</a></div></section>
   ${sections}
   ${appsBlock}`;
 
@@ -1578,20 +1490,28 @@ function writeGuidesHub() {
 }
 
 function writeAppsHub() {
-  const cards = apps
+  const ordered = [...featuredApps, ...apps.filter((a) => !a.featured)];
+  const cards = ordered
     .map((app) => {
       const guideHref = appGuideHref(app.slug);
-      return `<a class="fx-hub-link" href="${guideHref}"><strong>${escapeHtml(app.name)}</strong><span>${escapeHtml(app.shortDescription)}</span></a>`;
+      const logo = app.logo
+        ? `<img src="${escapeHtml(app.logo)}" alt="${escapeHtml(app.name)} logo" width="40" height="40" style="border-radius:10px;margin-bottom:.45rem;background:#111">`
+        : "";
+      const badge = app.featured ? `<span class="featured-badge">Featured</span>` : "";
+      return `<a class="fx-hub-link" href="${guideHref}">${logo}${badge}<strong>${escapeHtml(app.name)}</strong><span>${escapeHtml(app.shortDescription)}</span></a>`;
     })
     .join("");
 
+  const appsHubDesc =
+    "Independent guides for Y1 Game, IE777, Junglee Rummy, Mast179, RVIP, 66 Game and HU777 Club, invite links, safety tips, and download notes.";
+
   const body = `
-  <section class="fx-page-hero"><div class="wrap"><h1>Rummy app guides</h1><p class="fx-lead">Independent APK and bonus guides — not official operator sites. Each app has a dedicated page.</p></div></section>
+  <section class="fx-page-hero"><div class="wrap"><h1>Skill app guides</h1><p class="fx-lead">Y1 Game and IE777 lead the homepage. Older rummy brands stay listed below for search and comparison. We are not an official operator site.</p></div></section>
   <section class="block"><div class="wrap"><div class="fx-hub-grid">${cards}</div>
   <div class="fx-cta-band" style="margin-top:1.25rem">
-    <p>Compare all apps side-by-side on the homepage.</p>
-    <a class="fx-btn fx-btn--primary" href="/#apps">Compare apps</a>
-    <a class="fx-btn fx-btn--ghost" href="/best-rummy-apps-india/" style="margin-top:.5rem">Best rummy apps guide</a>
+    <p>Start with the two featured invite apps, then expand if you need more options.</p>
+    <a class="fx-btn fx-btn--primary" href="/y1-vs-ie777/">Compare Y1 vs IE777</a>
+    <a class="fx-btn fx-btn--ghost" href="/#featured" style="margin-top:.5rem">Homepage featured cards</a>
   </div>
   </div></section>`;
 
@@ -1600,14 +1520,14 @@ function writeAppsHub() {
     path.join(OUT, "apps", "index.html"),
     layout({
       pageType: "inner",
-      title: "Rummy Apps India | Junglee, Mast179, RVIP & More",
-      description: "Independent guides for Junglee Rummy, Mast179, RVIP, 66 Game and HU777 Club — official download links and safety tips.",
+      title: "Y1 Game, IE777 & Rummy Apps India 2026 | Guides",
+      description: appsHubDesc,
       canonicalPath: "/apps/",
       breadcrumbs: [
         { href: "/", label: "Home" },
         { href: "/apps/", label: "Apps" },
       ],
-      keywords: "rummy apps India, Junglee Rummy guide, Mast179 APK, RVIP rummy, HU777 Club download",
+      keywords: "Y1 Game, IE777 app India, rummy apps India, Junglee Rummy guide, skill app download",
       published: "2026-01-01",
       modified: BUILD_DATE,
       body,
@@ -1615,9 +1535,9 @@ function writeAppsHub() {
         breadcrumbLd({ slug: "apps", h1: "Apps", category: "apps", metaDescription: "" }),
         webPageLd({
           slug: "apps",
-          h1: "Rummy app guides",
-          metaDescription: "Independent guides for Junglee Rummy, Mast179, RVIP, 66 Game and HU777 Club — official download links and safety tips.",
-          intro: "Independent APK and bonus guides — not official operator sites.",
+          h1: "Y1 Game, IE777 and rummy app guides",
+          metaDescription: appsHubDesc,
+          intro: "Independent APK and bonus guides, not official operator sites.",
         }),
         appsListLd(apps),
       ],
@@ -1691,7 +1611,7 @@ function appsListLd(appList) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: "Best rummy apps India",
+    name: "Featured skill apps India",
     itemListElement: appList.map((app, i) => ({
       "@type": "ListItem",
       position: i + 1,
@@ -1699,6 +1619,26 @@ function appsListLd(appList) {
       description: app.shortDescription,
       url: pageUrl(pagePath(app.slug)),
     })),
+  };
+}
+
+function softwareAppLd(app) {
+  if (!app) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: app.name,
+    applicationCategory: "GameApplication",
+    operatingSystem: "Android",
+    description: app.shortDescription,
+    url: pageUrl(pagePath(app.slug)),
+    image: app.logo ? `${SITE_URL}${app.logo}` : undefined,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "INR",
+      url: app.downloadUrl,
+    },
   };
 }
 
@@ -1714,7 +1654,7 @@ function buildSeoPendingMd({ lastmod, urlCount }) {
     autoAppPages: apps.filter((a) => !seoPages.some((p) => p.slug === a.slug || p.appSlug === a.slug)).length,
     content: all.length,
   };
-  return `# SEO audit & pending work — ${siteConfig.name}
+  return `# SEO audit & pending work: ${siteConfig.name}
 
 > Auto-generated on build (\`${lastmod}\`). Re-run \`npm run build\` to refresh counts.
 
@@ -1728,11 +1668,21 @@ function buildSeoPendingMd({ lastmod, urlCount }) {
 | Core guides (\`seo-pages.json\`) | ${counts.seoJson} | Hand-written |
 | Extra guides (\`seo-pages-extra.json\`) | ${counts.seoExtra} | Long-tail topics |
 | Legal / trust pages | ${counts.legal} | Privacy, Terms, About |
-| Auto app guides | ${counts.autoAppPages} | Mast179, RVIP, 66 Game, HU777 stubs |
+| Auto app guides | ${counts.autoAppPages} | Non-featured apps without hand-written SEO |
+| Featured apps | ${featuredApps.length} | ${featuredApps.map((a) => a.name).join(", ") || "none"} |
 | 404 | 1 | \`noindex\`, no canonical |
 
 **Site URL:** \`${SITE_URL}\`  
 **Deploy env:** \`SITE_URL\` + \`SITE_INDEX=true\`
+
+### Featured keyword map (no overlap)
+
+| Page | Primary keywords |
+|------|------------------|
+| \`/y1-game/\` | Y1 Game, Y1 Game download, Y1 app India, Y1 referral link |
+| \`/ie777/\` | IE777, IE777 download, IE777 app India, IE777 registration |
+| \`/y1-vs-ie777/\` | Y1 vs IE777, Y1 IE777 comparison, game app comparison India |
+| \`/\` | Y1 Game download, IE777 app India, Y1 vs IE777 (supporting) |
 
 ---
 
@@ -1741,38 +1691,36 @@ function buildSeoPendingMd({ lastmod, urlCount }) {
 - [x] Unique title, description, keywords (where set), canonical, robots
 - [x] Open Graph + Twitter + \`article:published_time\` / \`modified_time\`
 - [x] \`og:site_name\`, \`og:locale\`, \`og:image:alt\`, author, \`geo.region=IN\`
-- [x] JSON-LD: WebSite (+ SearchAction), Organization (+ logo), WebPage, Article, FAQPage, BreadcrumbList, CollectionPage, ItemList
+- [x] JSON-LD: WebSite, Organization, WebPage, Article, FAQPage, BreadcrumbList, CollectionPage, ItemList, SoftwareApplication (featured)
+- [x] Homepage focuses on **Y1 Game + IE777** with logos; older apps kept indexable
 - [x] \`rel="sponsored noopener noreferrer"\` on affiliate download CTAs
 - [x] \`robots.txt\`, \`sitemap.xml\` (${counts.totalIndexable} URLs), \`llms.txt\`, \`.well-known/security.txt\`
-- [x] Auto-related links (category siblings, fixed broken slugs)
+- [x] Build-time SEO validation (slugs, H1, canonical, logos, required pages)
 - [x] Legal pages in sitemap + footer
-- [x] Logo alt text, 404 noindex without canonical
 
 ---
 
-## Pending — you must do manually (**6** items)
+## Pending: you must do manually (**5** items)
 
 | # | Task | Effort |
 |---|------|--------|
-| 1 | Submit \`${SITE_URL}/sitemap.xml\` in **Google Search Console** & Bing | 15 min |
-| 2 | Set \`SITE_URL\` on Vercel to production domain | 5 min |
-| 3 | Add **GA4** or Plausible (optional \`site-config.json\` slot) | 30 min |
-| 4 | **Rich Results Test** — home, \`/junglee-rummy/\`, \`/faqs/\` | 15 min |
-| 5 | Compress \`main.png\` (WebP), Lighthouse mobile SEO 95+ | 1 hr |
-| 6 | Add real \`sameAs\` social URLs in \`site-config.json\` (replace placeholders) | 5 min |
+| 1 | Re-submit \`${SITE_URL}/sitemap.xml\` in **Google Search Console** (now ${counts.totalIndexable} URLs) | 10 min |
+| 2 | Request indexing for \`/y1-game/\`, \`/ie777/\`, \`/y1-vs-ie777/\`, \`/\` | 10 min |
+| 3 | Add **GA4** (\`GA_MEASUREMENT_ID\`) if needed | 30 min |
+| 4 | **Rich Results Test**, home, \`/y1-game/\`, \`/ie777/\` | 15 min |
+| 5 | Review GSC **404** rows from the previous site version | 15 min |
 
 ---
 
-## Pending — more content (**~10** pages still useful)
+## Pending: more content (optional)
 
 | # | Task | Count |
 |---|------|------:|
-| 7 | Expand auto app stubs (Mast179, RVIP, 66, HU777) in \`seo-pages.json\` | 4 |
-| 8 | Add slugs: \`rummy-vs-teen-patti\`, \`rummy-state-laws\`, \`play-rummy-online-free\`, \`junglee-rummy-bonus\` | +4 |
-| 9 | Wire \`blog-posts.json\` → build (optional blog hub) | +5–10 |
-| 10 | Custom OG images 1200×630 per hub / top apps | 3–5 images |
+| 6 | Expand auto app stubs (Mast179, RVIP, 66, HU777) | 4 |
+| 7 | Wire \`blog-posts.json\` → build | +5-10 |
+| 8 | Custom OG images for Y1 / IE777 | 2 |
 
-Add new guides in \`src/data/seo-pages-extra.json\` (merged at build).
+**Note:** Ranking #1 cannot be guaranteed. This build optimizes structure, uniqueness, and crawlability.
 
 ---
 
@@ -1788,9 +1736,73 @@ Add new guides in \`src/data/seo-pages-extra.json\` (merged at build).
 
 \`\`\`bash
 npm run build
-grep -c "<url>" dist/sitemap.xml
 \`\`\`
 `;
+}
+
+function validateSeoBuild({ builtSeo, builtApps, builtLegal }) {
+  const errors = [];
+  const warnings = [];
+  const allContent = [...builtSeo, ...builtApps, ...builtLegal];
+  const slugs = allContent.map((p) => p.slug);
+  const titles = allContent.map((p) => p.metaTitle);
+  const primaryKw = new Map();
+
+  if (new Set(slugs).size !== slugs.length) errors.push("Duplicate page slugs detected.");
+  if (new Set(titles).size !== titles.length) warnings.push("Duplicate meta titles detected.");
+
+  for (const page of allContent) {
+    if (!page.metaTitle) errors.push(`Missing metaTitle: ${page.slug}`);
+    if (!page.metaDescription) errors.push(`Missing metaDescription: ${page.slug}`);
+    if (!page.h1) errors.push(`Missing h1: ${page.slug}`);
+    const file = path.join(OUT, page.slug, "index.html");
+    if (!fs.existsSync(file)) errors.push(`Missing HTML for ${page.slug}`);
+    else {
+      const html = fs.readFileSync(file, "utf8");
+      if (!html.includes('rel="canonical"')) errors.push(`Missing canonical: ${page.slug}`);
+      if (html.includes("noindex") && page.category !== "legal") {
+        /* legal can be indexed */ 
+      }
+      if (html.includes('content="noindex')) errors.push(`Unexpected noindex: ${page.slug}`);
+      if (!html.includes("<h1")) errors.push(`Missing H1 in HTML: ${page.slug}`);
+    }
+    const firstKw = (page.keywords || "").split(",")[0]?.trim().toLowerCase();
+    if (firstKw) {
+      if (primaryKw.has(firstKw)) warnings.push(`Primary keyword overlap: "${firstKw}" on ${primaryKw.get(firstKw)} and ${page.slug}`);
+      else primaryKw.set(firstKw, page.slug);
+    }
+  }
+
+  for (const app of featuredApps) {
+    if (!app.logo) warnings.push(`Featured app missing logo: ${app.slug}`);
+    else if (!fs.existsSync(path.join(OUT, app.logo.replace(/^\//, "")))) {
+      errors.push(`Missing logo file in dist: ${app.logo}`);
+    }
+    if (!app.downloadUrl?.startsWith("http")) errors.push(`Bad downloadUrl: ${app.slug}`);
+  }
+
+  const required = ["y1-game", "ie777", "y1-vs-ie777"];
+  for (const slug of required) {
+    if (!slugs.includes(slug)) errors.push(`Required page missing: ${slug}`);
+  }
+
+  const sitemap = fs.readFileSync(path.join(OUT, "sitemap.xml"), "utf8");
+  const locCount = (sitemap.match(/<loc>/g) || []).length;
+  const expected = 1 + 2 + allContent.length;
+  if (locCount !== expected) warnings.push(`Sitemap URL count ${locCount} != expected ${expected}`);
+
+  const homeHtml = fs.readFileSync(path.join(OUT, "index.html"), "utf8");
+  if (!homeHtml.includes("Y1") || !homeHtml.includes("IE777")) errors.push("Homepage missing Y1/IE777 branding.");
+  if (homeHtml.includes("winnersTicker") || homeHtml.includes("fx-score")) {
+    warnings.push("Homepage still contains decorative social-proof patterns.");
+  }
+
+  warnings.forEach((w) => console.warn("[seo]", w));
+  if (errors.length) {
+    errors.forEach((e) => console.error("[seo]", e));
+    throw new Error(`SEO validation failed (${errors.length} errors)`);
+  }
+  console.log(`[seo] Validation passed (${allContent.length} content pages, ${locCount} sitemap URLs)`);
 }
 
 function ensure(dir) {

@@ -1,9 +1,88 @@
 [
   {
+    "slug": "y1-game",
+    "name": "Y1 Game",
+    "featured": true,
+    "logo": "/images/apps/y1-game.png",
+    "shortDescription": "Mobile skill-game app with invite registration and in-app wallet flows. Verify every promotion inside the live client.",
+    "overview": "Y1 Game (y1share.com) onboards new users through an invite link. Registration usually starts with a mobile number; any welcome credit or deposit match shown in ads must be confirmed in the app before you add money. This page is an independent guide, we are not the official Y1 site.",
+    "features": [
+      "Invite-link signup with referral tracking",
+      "Mobile-first lobby and wallet",
+      "In-app promotions subject to live terms",
+      "KYC steps before larger withdrawals (when required)"
+    ],
+    "pros": [
+      "Clear invite path for Android installs",
+      "Referral parameters stay on the operator domain"
+    ],
+    "cons": [
+      "Off-site bonus amounts can differ from your account",
+      "Availability and games depend on region and app version"
+    ],
+    "downloadUrl": "https://www.y1share.com/share/agent/AD07ERVW?data=eyJtIjoyLCJsYW5nIjoiZW4iLCJpZCI6MX0=",
+    "referralCode": "AD07ERVW",
+    "linkNotice": "Sponsored invite link for Y1 Game. Offers are set by the operator; we may earn a referral benefit if you register.",
+    "earningNotes": "Skill games involve financial risk. Treat bonuses as marketing, not income. Confirm legality where you live before depositing.",
+    "howToDownload": [
+      "Tap Download to open the Y1 invite page on your phone.",
+      "Enter your mobile number and complete the operator's confirm step.",
+      "Install only from the path Y1 shows. Avoid APKs from chats.",
+      "Read wallet, KYC, and bonus rules inside the app before funding."
+    ],
+    "seoKeywords": [
+      "Y1 Game",
+      "Y1 Game download",
+      "Y1 app India",
+      "Y1 referral link",
+      "Y1 Game APK"
+    ]
+  },
+  {
+    "slug": "ie777",
+    "name": "IE777",
+    "featured": true,
+    "logo": "/images/apps/ie777.png",
+    "shortDescription": "Skill-game invite app with mobile registration. Check live bonus and withdrawal rules before you deposit.",
+    "overview": "IE777 distributes installs through share.ie777game.org invite pages. New users typically confirm a phone number, then follow the operator's download flow. Advertised starter credits change often, only the in-app wallet is authoritative. We are independent and not affiliated with IE777.",
+    "features": [
+      "Invite URL with referral code",
+      "Phone registration before download",
+      "Wallet history and deposit methods per region",
+      "In-app support for account issues"
+    ],
+    "pros": [
+      "Straightforward mobile confirm-and-download path",
+      "Referral code visible in the invite URL"
+    ],
+    "cons": [
+      "Promotional figures on landing pages may not match eligibility",
+      "Always verify publisher details before sideloading"
+    ],
+    "downloadUrl": "https://share.ie777game.org/web/share/index.html?ic=AD07FMU4&ts=1785956220&m=2&lang=en&id=1",
+    "referralCode": "AD07FMU4",
+    "linkNotice": "Sponsored IE777 invite link (code AD07FMU4). We may receive compensation if you register via this path.",
+    "earningNotes": "Never deposit more than you can afford to lose. Outcomes depend on skill, stakes, and variance, nothing is guaranteed.",
+    "howToDownload": [
+      "Open the IE777 share link from our Download button.",
+      "Enter your +91 mobile number and confirm when prompted.",
+      "Install from the operator's verified flow only.",
+      "Complete profile/KYC early if you plan to withdraw."
+    ],
+    "seoKeywords": [
+      "IE777",
+      "IE777 download",
+      "IE777 app India",
+      "IE777 registration",
+      "IE777 APK"
+    ]
+  },
+  {
     "slug": "junglee-rummy",
     "name": "Junglee Rummy",
+    "featured": false,
     "shortDescription": "Well-known rummy brand in India with multiple formats and regular promotional campaigns.",
-    "overview": "Junglee Rummy is a long-running real-money rummy brand in India. The link below opens the operator’s app / invite flow; welcome bonuses and referral terms change often and are governed solely by Junglee Rummy. We list it for discovery only—not as an endorsement.",
+    "overview": "Junglee Rummy is a long-running real-money rummy brand in India. The link below opens the operator’s app / invite flow; welcome bonuses and referral terms change often and are governed solely by Junglee Rummy. We list it for discovery only, not as an endorsement.",
     "features": [
       "Multiple rummy variants and table stakes",
       "Account verification (KYC) for withdrawals",
@@ -16,7 +95,7 @@
       "Regular tournaments and events (see in-app calendar)"
     ],
     "cons": [
-      "Bonus and referral rules can be complex—read each campaign",
+      "Bonus and referral rules can be complex. Read each campaign",
       "Withdrawal timing depends on verification and policy",
       "Real-money play may be restricted in some Indian states"
     ],
@@ -39,6 +118,7 @@
   {
     "slug": "mast179",
     "name": "Mast179",
+    "featured": false,
     "shortDescription": "Skill-game platform with welcome and deposit-linked promotions (verify all terms in-app).",
     "overview": "Mast179 markets skill-based games including rummy-style play in some regions. The invite link below may pre-fill a referral code; deposit bonuses and ₹ amounts shown in ads are not guaranteed and can change without notice.",
     "features": [
@@ -58,7 +138,7 @@
     "downloadUrl": "https://invite.mast179.com/?code=S54MMWS",
     "referralCode": "S54MMWS",
     "linkNotice": "Invite link with referral code. Bonuses are subject to Mast179’s current terms; we may earn a referral benefit.",
-    "earningNotes": "Treat bonuses as marketing—not income. Read play-through, expiry, and withdrawal rules in the official app.",
+    "earningNotes": "Treat bonuses as marketing, not income. Read play-through, expiry, and withdrawal rules in the official app.",
     "howToDownload": [
       "Use Download below to open the invite page.",
       "Enter referral code S54MMWS in-app if prompted.",
@@ -74,7 +154,8 @@
   {
     "slug": "rvip-one",
     "name": "RVIP",
-    "shortDescription": "Invite-only style onboarding with deposit promotions—double-check every figure in the live app.",
+    "featured": false,
+    "shortDescription": "Invite-only style onboarding with deposit promotions, double-check every figure in the live app.",
     "overview": "RVIP (rvip.one) uses invite links for new accounts. Marketing messages about ₹20 gifts or large first-deposit matches are common in the sector; always verify the exact offer inside the official client before funding.",
     "features": [
       "Invite link and referral code flow",
@@ -108,6 +189,7 @@
   {
     "slug": "game-66",
     "name": "66 Game",
+    "featured": false,
     "shortDescription": "Multi-game skill platform accessed via invite link; confirm games and rules after install.",
     "overview": "66 Game (66game.game) distributes installs through invite URLs. The platform may host several skill games; availability depends on your region and the current app version. Use the official flow only.",
     "features": [
@@ -120,7 +202,7 @@
       "Single link for onboarding with code D4SEESS"
     ],
     "cons": [
-      "Brand recognition varies—verify developer details carefully",
+      "Brand recognition varies. Verify developer details carefully",
       "Bonus marketing can oversimplify eligibility rules"
     ],
     "downloadUrl": "https://invite.66game.game/?code=D4SEESS",
@@ -142,8 +224,9 @@
   {
     "slug": "hu777-club",
     "name": "HU777 Club",
+    "featured": false,
     "shortDescription": "Club-style skill gaming brand with invite codes and deposit campaigns (verify in-app).",
-    "overview": "HU777 Club uses hu777.club invite links for new members. Messages about ₹20 or ₹500 starter credits and large first-deposit bonuses are operator-controlled; this site repeats none of those amounts as promises—check the live app.",
+    "overview": "HU777 Club uses hu777.club invite links for new members. Messages about ₹20 or ₹500 starter credits and large first-deposit bonuses are operator-controlled; this site repeats none of those amounts as promises. Check the live app.",
     "features": [
       "Referral code DTYS6RS on the invite URL",
       "Member wallet and transaction history",
@@ -160,7 +243,7 @@
     "downloadUrl": "https://invite.hu777.club/?code=DTYS6RS",
     "referralCode": "DTYS6RS",
     "linkNotice": "Invite link with referral code DTYS6RS. We may receive compensation if you register via this path.",
-    "earningNotes": "Referral incentives do not change the math of the games—skill and bankroll discipline still matter.",
+    "earningNotes": "Referral incentives do not change the math of the games, skill and bankroll discipline still matter.",
     "howToDownload": [
       "Use the button below to open HU777 Club’s invite page.",
       "Confirm code DTYS6RS matches what the app displays.",
