@@ -22,7 +22,7 @@ npm run preview  # production build + serve
    | `SITE_INDEX` | `true` |
    | `GA_MEASUREMENT_ID` | *(optional)* your GA4 ID |
 
-3. Deploy — build command `npm run build`, output directory `dist`.
+3. Deploy, build command `npm run build`, output directory `dist`.
 4. After deploy:
    - Open `https://your-domain/sitemap.xml`
    - Submit sitemap in [Google Search Console](https://search.google.com/search-console)
@@ -50,12 +50,12 @@ npm run preview  # production build + serve
 
 ## SEO outputs
 
-- `dist/sitemap.xml` — all indexable URLs
+- `dist/sitemap.xml`, all indexable URLs
 - `dist/robots.txt`
 - `dist/llms.txt`
 - `dist/.well-known/security.txt`
-- `SEO-PENDING.md` — regenerated each build
+- `SEO-PENDING.md`, regenerated each build
 
 ## License
 
-Private — all rights reserved unless stated otherwise.
+Private, all rights reserved unless stated otherwise.
